@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
 :root {
+  /* ARISE Brand Colors */
+  --teal-dark: #1D4E4E;
+  --teal-primary: #0D5C5C;
+  --teal-light: #7A9A8E;
+  --gold: #D4A84B;
+  --gold-light: #E8C97A;
+  --charcoal: #2D2D2D;
+  --terracotta: #D4856A;
+  --white: #FFFFFF;
+  --gray-light: #F5F5F5;
+  --gray: #E5E5E5;
+  
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #2D2D2D;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-teal-dark: oklch(35% 0.05 180);
+  --color-teal-primary: oklch(40% 0.06 180);
+  --color-teal-light: oklch(62% 0.04 160);
+  --color-gold: oklch(75% 0.12 85);
+  --color-gold-light: oklch(82% 0.10 85);
+  --color-charcoal: oklch(25% 0 0);
+  --color-terracotta: oklch(65% 0.10 40);
+  --color-gray-light: oklch(97% 0 0);
+  --font-sans: 'Open Sans', Arial, Helvetica, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Open Sans', Arial, Helvetica, sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--teal-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--teal-dark);
 }
