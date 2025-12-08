@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ClipboardList, BarChart3, Target, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, BarChart3, Target, LogOut, ChevronDown, Settings } from 'lucide-react';
 
 interface SidebarProps {
   user: {
@@ -19,6 +19,7 @@ const navItems = [
   { href: '/dashboard/assessments', label: 'Assessments', icon: ClipboardList },
   { href: '/dashboard/results', label: 'Results & Reports', icon: BarChart3 },
   { href: '/dashboard/development', label: 'Development plan', icon: Target },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
