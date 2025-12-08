@@ -81,9 +81,19 @@ export default function CompleteProfile() {
       localStorage.removeItem('signupPlan');
       localStorage.removeItem('signupBillingCycle');
       
-      // Store first name for welcome page
+      // Store user data for welcome page and dashboard
       localStorage.setItem('signupFirstName', formData.firstName);
       localStorage.setItem('signupLastName', formData.lastName);
+      
+      // Store user for dashboard
+      localStorage.setItem('arise_user', JSON.stringify({
+        id: data.user.id,
+        email: data.user.email,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        plan: data.user.plan,
+        userType: data.user.userType,
+      }));
 
       router.push('/signup/welcome');
     } catch (err) {
