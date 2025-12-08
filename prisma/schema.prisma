@@ -17,13 +17,57 @@ model User {
   jobTitle      String?
   phone         String?
   timezone      String?
+  
+  // Additional profile fields
+  gender        String?
+  age           Int?
+  highestDegree String?
+  mainGoal      String?
+  hasCoach      Boolean?
+  employeeCount String?
+  
+  // User type and plan
   userType      UserType     @default(individual)
   plan          PlanType     @default(starter)
   billingCycle  BillingCycle @default(monthly)
+  
+  // Account status
   isActive      Boolean      @default(true)
   emailVerified Boolean      @default(false)
+  
+  // Timestamps
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  
+  // Relations
+  subscription  Subscription?
+}
+
+model Subscription {
+  id              Int          @id @default(autoincrement())
+  userId          Int          @unique
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  plan            PlanType     @default(starter)
+  billingCycle    BillingCycle @default(monthly)
+  status          SubscriptionStatus @default(active)
+  
+  // Pricing
+  price           Int          @default(0)
+  currency        String       @default("USD")
+  
+  // Dates
+  startDate       DateTime     @default(now())
+  endDate         DateTime?
+  nextBillingDate DateTime?
+  cancelledAt     DateTime?
+  
+  // Features
+  hasCoaching     Boolean      @default(false)
+  coachingSessions Int         @default(0)
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 enum UserType {
@@ -36,9 +80,18 @@ enum PlanType {
   starter
   professional
   enterprise
+  revelation
+  coaching
 }
 
 enum BillingCycle {
   monthly
   annual
+}
+
+enum SubscriptionStatus {
+  active
+  cancelled
+  expired
+  pending
 }
