@@ -8,4 +8,4 @@ cmds = ["pnpm install"]
 cmds = ["pnpm build"]
 
 [start]
-cmd = "npx prisma migrate deploy && pnpm start"
+cmd = "pnpm start"
