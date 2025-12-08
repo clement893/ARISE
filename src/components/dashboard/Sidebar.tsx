@@ -10,7 +10,8 @@ interface SidebarProps {
     lastName?: string | null;
     plan?: string;
   };
-  onLogout: () => void;
+  activePage?: string;
+  onLogout?: () => void;
 }
 
 const navItems = [
@@ -20,7 +21,7 @@ const navItems = [
   { href: '/dashboard/development', label: 'Development plan', icon: Target },
 ];
 
-export default function Sidebar({ user, onLogout }: SidebarProps) {
+export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
   const pathname = usePathname();
   const displayName = user.firstName || 'User';
   const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
@@ -63,7 +64,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
       <nav className="flex-1 px-3">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = activePage ? item.href.includes(activePage) : pathname === item.href;
             const Icon = item.icon;
             return (
               <li key={item.href}>
