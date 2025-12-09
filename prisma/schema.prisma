@@ -39,6 +39,14 @@ model User {
   isActive      Boolean      @default(true)
   emailVerified Boolean      @default(false)
   
+  // User Settings
+  settingsEmailNotifications    Boolean  @default(true)
+  settingsWeeklyReport          Boolean  @default(true)
+  settingsDarkMode              Boolean  @default(false)
+  settingsLanguage              String   @default("English")
+  settingsDataSharing           Boolean  @default(true)
+  settingsAnalyticsTracking     Boolean  @default(true)
+  
   // Timestamps
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
