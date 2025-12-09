@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "npx prisma generate && next build",
-    "start": "npx prisma db push && next start",
+    "start": "npx prisma db push && node scripts/seed-admin.mjs && next start",
+    "seed:admin": "node scripts/seed-admin.mjs",
     "postinstall": "npx prisma generate",
     "lint": "eslint",
     "db:migrate": "prisma migrate deploy",
