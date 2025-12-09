@@ -1,0 +1,377 @@
+/**
+ * SendGrid Email Service
+ * Handles sending transactional emails via SendGrid API
+ */
+
+const SENDGRID_API_URL = 'https://api.sendgrid.com/v3/mail/send';
+
+interface EmailRecipient {
+  email: string;
+  name?: string;
+}
+
+interface EmailContent {
+  type: 'text/plain' | 'text/html';
+  value: string;
+}
+
+interface SendEmailParams {
+  to: EmailRecipient | EmailRecipient[];
+  subject: string;
+  text?: string;
+  html?: string;
+  from?: EmailRecipient;
+}
+
+interface SendGridResponse {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Send an email using SendGrid API
+ */
+export async function sendEmail(params: SendEmailParams): Promise<SendGridResponse> {
+  const apiKey = process.env.SENDGRID_API_KEY;
+  
+  if (!apiKey) {
+    console.error('SendGrid API key not configured');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const fromEmail = params.from || {
+    email: process.env.SENDGRID_FROM_EMAIL || 'hello@nukleo.digital',
+    name: process.env.SENDGRID_FROM_NAME || 'ARISE-Test'
+  };
+
+  const toRecipients = Array.isArray(params.to) ? params.to : [params.to];
+
+  const content: EmailContent[] = [];
+  if (params.text) {
+    content.push({ type: 'text/plain', value: params.text });
+  }
+  if (params.html) {
+    content.push({ type: 'text/html', value: params.html });
+  }
+
+  const payload = {
+    personalizations: [
+      {
+        to: toRecipients.map(r => ({ email: r.email, name: r.name })),
+      }
+    ],
+    from: {
+      email: fromEmail.email,
+      name: fromEmail.name,
+    },
+    subject: params.subject,
+    content,
+  };
+
+  try {
+    const response = await fetch(SENDGRID_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.status === 202) {
+      return { success: true };
+    }
+
+    const errorData = await response.json().catch(() => ({}));
+    console.error('SendGrid error:', response.status, errorData);
+    return { 
+      success: false, 
+      error: errorData.errors?.[0]?.message || `Failed to send email (${response.status})` 
+    };
+  } catch (error) {
+    console.error('SendGrid request failed:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to send email' 
+    };
+  }
+}
+
+/**
+ * Send welcome/confirmation email to new user
+ */
+export async function sendWelcomeEmail(params: {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<SendGridResponse> {
+  const { email, firstName, lastName } = params;
+  const name = firstName ? `${firstName}${lastName ? ' ' + lastName : ''}` : 'there';
+
+  const subject = 'Welcome to ARISE Human Capital - Your Leadership Journey Begins!';
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to ARISE</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f5f5;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f5f5;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0D5C5C; padding: 40px 40px 30px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">ARISE</h1>
+              <p style="margin: 10px 0 0; color: #D4A84B; font-size: 14px; letter-spacing: 1px;">HUMAN CAPITAL</p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 20px; color: #0D5C5C; font-size: 24px;">Welcome, ${name}! 🎉</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a5568; font-size: 16px; line-height: 1.6;">
+                Thank you for joining ARISE Human Capital. Your journey to becoming an authentic leader starts now!
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #4a5568; font-size: 16px; line-height: 1.6;">
+                Your account has been successfully created. Here's what you can do next:
+              </p>
+              
+              <!-- Steps -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
+                <tr>
+                  <td style="padding: 15px; background-color: #f7fafc; border-radius: 8px; margin-bottom: 10px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td width="40" style="vertical-align: top;">
+                          <div style="width: 32px; height: 32px; background-color: #0D5C5C; border-radius: 50%; text-align: center; line-height: 32px; color: white; font-weight: bold;">1</div>
+                        </td>
+                        <td style="padding-left: 15px;">
+                          <strong style="color: #0D5C5C;">Complete Your Assessments</strong>
+                          <p style="margin: 5px 0 0; color: #718096; font-size: 14px;">Take the MBTI, TKI, 360° Feedback, and Wellness assessments to understand your leadership style.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height: 10px;"></td></tr>
+                <tr>
+                  <td style="padding: 15px; background-color: #f7fafc; border-radius: 8px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td width="40" style="vertical-align: top;">
+                          <div style="width: 32px; height: 32px; background-color: #0D5C5C; border-radius: 50%; text-align: center; line-height: 32px; color: white; font-weight: bold;">2</div>
+                        </td>
+                        <td style="padding-left: 15px;">
+                          <strong style="color: #0D5C5C;">Invite Your Evaluators</strong>
+                          <p style="margin: 5px 0 0; color: #718096; font-size: 14px;">Get 360° feedback from colleagues, managers, and direct reports for comprehensive insights.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height: 10px;"></td></tr>
+                <tr>
+                  <td style="padding: 15px; background-color: #f7fafc; border-radius: 8px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td width="40" style="vertical-align: top;">
+                          <div style="width: 32px; height: 32px; background-color: #0D5C5C; border-radius: 50%; text-align: center; line-height: 32px; color: white; font-weight: bold;">3</div>
+                        </td>
+                        <td style="padding-left: 15px;">
+                          <strong style="color: #0D5C5C;">Build Your Development Plan</strong>
+                          <p style="margin: 5px 0 0; color: #718096; font-size: 14px;">Create personalized goals and track your growth with our coaching resources.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- CTA Button -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
+                <tr>
+                  <td style="text-align: center;">
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-d62b.up.railway.app'}/dashboard" 
+                       style="display: inline-block; padding: 16px 40px; background-color: #D4A84B; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+                      Go to Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 30px 0 0; color: #718096; font-size: 14px; line-height: 1.6;">
+                If you have any questions, feel free to reach out to our support team. We're here to help you on your leadership journey.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #2D2D2D; padding: 30px 40px; text-align: center;">
+              <p style="margin: 0 0 10px; color: #D4A84B; font-size: 16px; font-weight: 600;">ARISE Human Capital</p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">Empowering Authentic Leaders</p>
+              <p style="margin: 20px 0 0; color: #6b7280; font-size: 11px;">
+                © ${new Date().getFullYear()} ARISE Human Capital. All rights reserved.
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `
+Welcome to ARISE Human Capital, ${name}!
+
+Thank you for joining us. Your journey to becoming an authentic leader starts now!
+
+Your account has been successfully created. Here's what you can do next:
+
+1. Complete Your Assessments
+   Take the MBTI, TKI, 360° Feedback, and Wellness assessments to understand your leadership style.
+
+2. Invite Your Evaluators
+   Get 360° feedback from colleagues, managers, and direct reports for comprehensive insights.
+
+3. Build Your Development Plan
+   Create personalized goals and track your growth with our coaching resources.
+
+Go to your dashboard: ${process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-d62b.up.railway.app'}/dashboard
+
+If you have any questions, feel free to reach out to our support team.
+
+Best regards,
+The ARISE Human Capital Team
+  `;
+
+  return sendEmail({
+    to: { email, name: firstName || undefined },
+    subject,
+    html,
+    text,
+  });
+}
+
+/**
+ * Send 360° feedback invitation email to evaluator
+ */
+export async function sendEvaluatorInviteEmail(params: {
+  evaluatorEmail: string;
+  evaluatorName: string;
+  userName: string;
+  relationship: string;
+  feedbackUrl: string;
+}): Promise<SendGridResponse> {
+  const { evaluatorEmail, evaluatorName, userName, relationship, feedbackUrl } = params;
+
+  const subject = `${userName} has invited you to provide 360° feedback`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f5f5;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f5f5;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0D5C5C; padding: 40px 40px 30px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">ARISE</h1>
+              <p style="margin: 10px 0 0; color: #D4A84B; font-size: 14px; letter-spacing: 1px;">360° FEEDBACK REQUEST</p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 20px; color: #0D5C5C; font-size: 24px;">Hello ${evaluatorName},</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a5568; font-size: 16px; line-height: 1.6;">
+                <strong>${userName}</strong> has invited you to provide feedback as their <strong>${relationship}</strong>.
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #4a5568; font-size: 16px; line-height: 1.6;">
+                Your honest feedback will help them understand their leadership strengths and areas for development. The survey takes approximately 10-15 minutes to complete.
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #718096; font-size: 14px; line-height: 1.6;">
+                <em>All responses are anonymous and will be aggregated with other feedback.</em>
+              </p>
+              
+              <!-- CTA Button -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
+                <tr>
+                  <td style="text-align: center;">
+                    <a href="${feedbackUrl}" 
+                       style="display: inline-block; padding: 16px 40px; background-color: #D4A84B; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+                      Provide Feedback
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 30px 0 0; color: #718096; font-size: 14px; line-height: 1.6;">
+                Thank you for taking the time to support ${userName}'s leadership development.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #2D2D2D; padding: 30px 40px; text-align: center;">
+              <p style="margin: 0 0 10px; color: #D4A84B; font-size: 16px; font-weight: 600;">ARISE Human Capital</p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">Empowering Authentic Leaders</p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `
+Hello ${evaluatorName},
+
+${userName} has invited you to provide feedback as their ${relationship}.
+
+Your honest feedback will help them understand their leadership strengths and areas for development. The survey takes approximately 10-15 minutes to complete.
+
+All responses are anonymous and will be aggregated with other feedback.
+
+Provide Feedback: ${feedbackUrl}
+
+Thank you for taking the time to support ${userName}'s leadership development.
+
+Best regards,
+The ARISE Human Capital Team
+  `;
+
+  return sendEmail({
+    to: { email: evaluatorEmail, name: evaluatorName },
+    subject,
+    html,
+    text,
+  });
+}
