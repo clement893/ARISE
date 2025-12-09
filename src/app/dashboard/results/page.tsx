@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
-import { Share2, MessageCircle, ChevronRight, Download } from 'lucide-react';
+import { Share2, MessageCircle, ChevronRight, Download, FileText } from 'lucide-react';
+import { generateLeadershipReport } from '@/lib/generateReport';
 
 interface User {
   id: number;
@@ -19,6 +20,7 @@ export default function ResultsPage() {
   const [showCoachingModal, setShowCoachingModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [assessmentResults, setAssessmentResults] = useState<any>(null);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('arise_user');
@@ -49,6 +51,32 @@ export default function ResultsPage() {
       }
     } catch (error) {
       console.error('Failed to fetch assessments:', error);
+    }
+  };
+
+  const handleDownloadReport = async () => {
+    if (!user || !assessmentResults) return;
+    
+    setGeneratingPDF(true);
+    try {
+      // Fetch full assessment data for the report
+      const response = await fetch('/api/assessments', {
+        headers: {
+          'x-user-id': user.id.toString(),
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        generateLeadershipReport(
+          { firstName: user.firstName || '', lastName: user.lastName || '', email: user.email },
+          data.summary
+        );
+      }
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+    } finally {
+      setGeneratingPDF(false);
     }
   };
 
@@ -106,6 +134,14 @@ export default function ResultsPage() {
             <p className="text-gray-600">Your comprehensive leadership assessment results</p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={handleDownloadReport}
+              disabled={generatingPDF || !assessmentResults}
+              className="flex items-center gap-2 px-4 py-2 bg-[#0D5C5C] text-white rounded-lg text-sm font-medium hover:bg-[#0a4a4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FileText className="w-4 h-4" />
+              {generatingPDF ? 'Generating...' : 'Download PDF Report'}
+            </button>
             <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
