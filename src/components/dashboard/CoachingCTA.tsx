@@ -1,8 +1,16 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function CoachingCTA() {
+  const router = useRouter();
+
+  const handleExploreCoaching = () => {
+    // Navigate to results page where coaching modal is available
+    router.push('/dashboard/results');
+  };
+
   return (
     <div className="bg-[#0D5C5C] rounded-2xl p-8 flex items-center justify-between overflow-hidden relative">
       {/* Content */}
@@ -15,7 +23,10 @@ export default function CoachingCTA() {
           Schedule your FREE coaching session to debrief your results and build a 
           personalized development plan.
         </p>
-        <button className="flex items-center gap-2 px-5 py-3 bg-[#D4A84B] text-[#0D5C5C] rounded-lg font-semibold text-sm hover:bg-[#c49a42] transition-colors">
+        <button 
+          onClick={handleExploreCoaching}
+          className="flex items-center gap-2 px-5 py-3 bg-[#D4A84B] text-[#0D5C5C] rounded-lg font-semibold text-sm hover:bg-[#c49a42] transition-colors"
+        >
           Explore coaching options
           <ArrowRight className="w-4 h-4" />
         </button>

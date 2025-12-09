@@ -23,13 +23,13 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="#approach" className="text-white/90 hover:text-white text-sm font-medium transition-colors">
+            <Link href="/#four-dimensions" className="text-white/90 hover:text-white text-sm font-medium transition-colors">
               Approach
             </Link>
-            <Link href="#pricing" className="text-white/90 hover:text-white text-sm font-medium transition-colors">
+            <Link href="/pricing" className="text-white/90 hover:text-white text-sm font-medium transition-colors">
               Pricing
             </Link>
-            <Link href="#about" className="text-white/90 hover:text-white text-sm font-medium transition-colors">
+            <Link href="/about" className="text-white/90 hover:text-white text-sm font-medium transition-colors">
               About
             </Link>
           </nav>
@@ -66,21 +66,22 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-white/20">
             <nav className="flex flex-col space-y-4">
-              <Link href="#approach" className="text-white/90 hover:text-white text-sm font-medium">
+              <Link href="/#four-dimensions" className="text-white/90 hover:text-white text-sm font-medium" onClick={() => setIsMenuOpen(false)}>
                 Approach
               </Link>
-              <Link href="#pricing" className="text-white/90 hover:text-white text-sm font-medium">
+              <Link href="/pricing" className="text-white/90 hover:text-white text-sm font-medium" onClick={() => setIsMenuOpen(false)}>
                 Pricing
               </Link>
-              <Link href="#about" className="text-white/90 hover:text-white text-sm font-medium">
+              <Link href="/about" className="text-white/90 hover:text-white text-sm font-medium" onClick={() => setIsMenuOpen(false)}>
                 About
               </Link>
-              <Link href="/login" className="text-white/90 hover:text-white text-sm font-medium">
+              <Link href="/login" className="text-white/90 hover:text-white text-sm font-medium" onClick={() => setIsMenuOpen(false)}>
                 Sign in
               </Link>
               <Link 
                 href="/signup" 
                 className="bg-[#D4A84B] hover:bg-[#C49A3D] text-white px-4 py-2 rounded-full text-sm font-semibold text-center"
+                onClick={() => setIsMenuOpen(false)}
               >
                 Get Started →
               </Link>
