@@ -3,11 +3,14 @@ import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 import { PlanType } from '@prisma/client';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-11-17.clover',
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-11-17.clover',
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +18,9 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('stripe-signature');
 
     let event: Stripe.Event;
+
+    const stripe = getStripe();
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     // Verify webhook signature if secret is configured
     if (webhookSecret && signature) {
