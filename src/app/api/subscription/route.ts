@@ -71,17 +71,17 @@ export async function GET(request: NextRequest) {
         });
         invoices = invoiceList.data;
 
-        // Get upcoming invoice
+        // Get upcoming invoice from subscription data
         if (user.stripeSubscriptionId) {
           try {
-            // Use subscription to get next billing info instead of deprecated retrieveUpcoming
-            const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-            if (subscription.current_period_end) {
+            // Use subscription to get next billing info
+            const sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId) as Stripe.Subscription;
+            if (sub && sub.current_period_end) {
               upcomingInvoice = {
-                amount_due: subscription.items.data[0]?.price?.unit_amount || 0,
-                currency: subscription.currency,
-                next_payment_attempt: subscription.current_period_end,
-              } as Stripe.UpcomingInvoice;
+                amount_due: sub.items?.data?.[0]?.price?.unit_amount || 0,
+                currency: sub.currency || 'usd',
+                next_payment_attempt: sub.current_period_end,
+              } as unknown as Stripe.UpcomingInvoice;
             }
           } catch {
             // No upcoming invoice
