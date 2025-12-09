@@ -354,10 +354,10 @@ export default function AssessmentsPage() {
                       </span>
                     </div>
                     <button 
-                      onClick={() => router.push('/dashboard/360-self')}
+                      onClick={() => router.push('/dashboard/360-evaluators')}
                       className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors"
                     >
-                      Add
+                      Add evaluators
                     </button>
                   </div>
                 )}

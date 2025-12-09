@@ -164,7 +164,7 @@ export default function DashboardPage() {
 
         {/* Feedback Banner */}
         <div className="mb-6">
-          <FeedbackBanner onAddEvaluators={() => router.push('/dashboard/360-self')} />
+          <FeedbackBanner onAddEvaluators={() => router.push('/dashboard/360-evaluators')} />
         </div>
 
         {/* Progress Card */}
