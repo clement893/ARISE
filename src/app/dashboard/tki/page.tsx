@@ -109,10 +109,36 @@ export default function TKITestPage() {
     setAnswers(prev => ({ ...prev, [currentQuestion]: choice }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestion < tkiQuestions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
+      // Calculate final scores
+      const finalScores = calculateScores();
+      const dominant = getDominantMode(finalScores);
+      const maxScore = Math.max(...Object.values(finalScores));
+      const overallScore = Math.round((maxScore / 12) * 100);
+
+      // Save to database
+      try {
+        await fetch('/api/assessments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user?.id?.toString() || '',
+          },
+          body: JSON.stringify({
+            assessmentType: 'tki',
+            answers: answers,
+            scores: finalScores,
+            dominantResult: dominant,
+            overallScore: overallScore,
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to save TKI results:', error);
+      }
+
       setCurrentStep('results');
     }
   };

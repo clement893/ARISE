@@ -111,10 +111,54 @@ export default function WellnessTestPage() {
     setAnswers({ ...answers, [wellnessQuestions[currentQuestion].id]: value });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestion < wellnessQuestions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
+      // Calculate final scores
+      const categoryScores: Record<string, number> = {};
+      const categoryTotals: Record<string, { total: number; count: number }> = {};
+      
+      categories.forEach(cat => {
+        categoryTotals[cat.id] = { total: 0, count: 0 };
+      });
+
+      Object.entries(answers).forEach(([questionId, value]) => {
+        const question = wellnessQuestions.find(q => q.id === parseInt(questionId));
+        if (question) {
+          categoryTotals[question.category].total += value;
+          categoryTotals[question.category].count += 1;
+        }
+      });
+
+      Object.entries(categoryTotals).forEach(([category, data]) => {
+        categoryScores[category] = data.count > 0 ? Math.round((data.total / (data.count * 5)) * 100) : 0;
+      });
+
+      const overallScore = Math.round(
+        Object.values(categoryScores).reduce((a, b) => a + b, 0) / Object.values(categoryScores).length
+      );
+
+      // Save to database
+      try {
+        await fetch('/api/assessments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user?.id?.toString() || '',
+          },
+          body: JSON.stringify({
+            assessmentType: 'wellness',
+            answers: answers,
+            scores: categoryScores,
+            dominantResult: `${overallScore}%`,
+            overallScore: overallScore,
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to save Wellness results:', error);
+      }
+
       setTestState('complete');
       localStorage.setItem('arise_wellness_results', JSON.stringify(answers));
     }

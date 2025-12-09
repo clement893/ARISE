@@ -110,10 +110,55 @@ export default function SelfAssessment360Page() {
     setAnswers({ ...answers, [selfAssessmentQuestions[currentQuestion].id]: value });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestion < selfAssessmentQuestions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
+      // Calculate final scores
+      const categoryScores: Record<string, number> = {};
+      const categoryTotals: Record<string, { total: number; count: number }> = {};
+      
+      categories.forEach(cat => {
+        categoryTotals[cat.id] = { total: 0, count: 0 };
+      });
+
+      Object.entries(answers).forEach(([questionId, value]) => {
+        const question = selfAssessmentQuestions.find(q => q.id === parseInt(questionId));
+        if (question) {
+          categoryTotals[question.category].total += value;
+          categoryTotals[question.category].count += 1;
+        }
+      });
+
+      Object.entries(categoryTotals).forEach(([category, data]) => {
+        categoryScores[category] = data.count > 0 ? Math.round((data.total / (data.count * 5)) * 100) : 0;
+      });
+
+      const overallScore = Math.round(
+        Object.values(categoryScores).reduce((a, b) => a + b, 0) / Object.values(categoryScores).length
+      );
+      const overallAverage = (overallScore / 20).toFixed(1); // Convert to 5-point scale
+
+      // Save to database
+      try {
+        await fetch('/api/assessments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user?.id?.toString() || '',
+          },
+          body: JSON.stringify({
+            assessmentType: 'self_360',
+            answers: answers,
+            scores: categoryScores,
+            dominantResult: `${overallAverage}/5`,
+            overallScore: overallScore,
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to save 360 Self results:', error);
+      }
+
       setTestState('complete');
       localStorage.setItem('arise_360_self_results', JSON.stringify(answers));
     }

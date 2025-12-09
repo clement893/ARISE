@@ -18,6 +18,7 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [showCoachingModal, setShowCoachingModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [assessmentResults, setAssessmentResults] = useState<any>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('arise_user');
@@ -25,6 +26,7 @@ export default function ResultsPage() {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
+        fetchAssessments(userData.id);
       } catch {
         router.push('/signup');
       }
@@ -33,6 +35,22 @@ export default function ResultsPage() {
     }
     setLoading(false);
   }, [router]);
+
+  const fetchAssessments = async (userId: number) => {
+    try {
+      const response = await fetch('/api/assessments', {
+        headers: {
+          'x-user-id': userId.toString(),
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAssessmentResults(data.summary);
+      }
+    } catch (error) {
+      console.error('Failed to fetch assessments:', error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('arise_user');
@@ -52,11 +70,12 @@ export default function ResultsPage() {
     return null;
   }
 
+  // Dynamic leader profile based on assessment results
   const leaderProfile = [
-    { label: 'MBTI', value: 'ENFJ', color: 'bg-[#2D2D2D]' },
-    { label: 'TKI Dominant', value: 'Collaborating', color: 'bg-[#2D2D2D]' },
-    { label: '360°', value: '4.2/5', color: 'bg-[#0D5C5C]' },
-    { label: 'Light score', value: '78%', color: 'bg-[#D4A84B]' },
+    { label: 'MBTI', value: assessmentResults?.mbti?.dominantResult || 'Not completed', color: 'bg-[#2D2D2D]' },
+    { label: 'TKI Dominant', value: assessmentResults?.tki?.dominantResult || 'Not completed', color: 'bg-[#2D2D2D]' },
+    { label: '360°', value: assessmentResults?.self_360?.dominantResult || 'Not completed', color: 'bg-[#0D5C5C]' },
+    { label: 'Light score', value: assessmentResults?.wellness ? `${assessmentResults.wellness.overallScore}%` : 'Not completed', color: 'bg-[#D4A84B]' },
   ];
 
   const developmentGoals = [
@@ -65,12 +84,14 @@ export default function ResultsPage() {
     { id: 3, title: 'Enhance emotional intelligence', status: 'not_started' },
   ];
 
+  // Dynamic radar data based on wellness scores
+  const wellnessScores = assessmentResults?.wellness?.scores || {};
   const radarData = [
-    { label: 'Physical', value: 85 },
-    { label: 'Mental', value: 72 },
-    { label: 'Emotional', value: 68 },
-    { label: 'Spiritual', value: 55 },
-    { label: 'Social', value: 78 },
+    { label: 'Physical', value: wellnessScores.exercise || 0 },
+    { label: 'Mental', value: wellnessScores.stress || 0 },
+    { label: 'Emotional', value: wellnessScores.social || 0 },
+    { label: 'Spiritual', value: wellnessScores.substances || 0 },
+    { label: 'Social', value: wellnessScores.nutrition || 0 },
   ];
 
   return (

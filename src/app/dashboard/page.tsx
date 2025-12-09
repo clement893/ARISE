@@ -8,7 +8,6 @@ import ProgressCard from '@/components/dashboard/ProgressCard';
 import EvaluationCard from '@/components/dashboard/EvaluationCard';
 import CoachingCTA from '@/components/dashboard/CoachingCTA';
 import { Brain, Users, MessageSquare, Heart } from 'lucide-react';
-import Link from 'next/link';
 
 interface User {
   id: number;
@@ -18,10 +17,37 @@ interface User {
   plan?: string;
 }
 
+interface AssessmentSummary {
+  tki: {
+    dominantResult: string;
+    overallScore: number;
+    completedAt: string;
+  } | null;
+  wellness: {
+    dominantResult: string;
+    overallScore: number;
+    completedAt: string;
+  } | null;
+  self_360: {
+    dominantResult: string;
+    overallScore: number;
+    completedAt: string;
+  } | null;
+  mbti: {
+    dominantResult: string;
+    overallScore: number;
+    completedAt: string;
+  } | null;
+  completedCount: number;
+  totalAssessments: number;
+  overallProgress: number;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [assessmentSummary, setAssessmentSummary] = useState<AssessmentSummary | null>(null);
 
   useEffect(() => {
     // Check for user in localStorage (from signup flow)
@@ -30,6 +56,8 @@ export default function DashboardPage() {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
+        // Fetch assessment results
+        fetchAssessments(userData.id);
       } catch {
         // Invalid data, redirect to login
         router.push('/signup');
@@ -40,6 +68,22 @@ export default function DashboardPage() {
     }
     setLoading(false);
   }, [router]);
+
+  const fetchAssessments = async (userId: number) => {
+    try {
+      const response = await fetch('/api/assessments', {
+        headers: {
+          'x-user-id': userId.toString(),
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAssessmentSummary(data.summary);
+      }
+    } catch (error) {
+      console.error('Failed to fetch assessments:', error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('arise_user');
@@ -59,14 +103,49 @@ export default function DashboardPage() {
     return null;
   }
 
+  // Calculate progress based on actual assessment results
+  const getAssessmentStatus = (type: 'tki' | 'wellness' | 'self_360' | 'mbti') => {
+    if (!assessmentSummary) return 'not_started';
+    const result = assessmentSummary[type];
+    return result ? 'completed' : 'not_started';
+  };
+
+  const getProgressPercentage = (type: 'tki' | 'wellness' | 'self_360' | 'mbti') => {
+    if (!assessmentSummary) return 0;
+    const result = assessmentSummary[type];
+    return result ? 100 : 0;
+  };
+
   const progressItems = [
-    { label: 'MBTI', percentage: 100 },
-    { label: 'TKI', percentage: 100 },
-    { label: '360° Feedback', percentage: 40 },
-    { label: 'Wellness', percentage: 0, showAdd: true },
+    { label: 'MBTI', percentage: getProgressPercentage('mbti') },
+    { label: 'TKI', percentage: getProgressPercentage('tki') },
+    { label: '360° Feedback', percentage: getProgressPercentage('self_360') },
+    { label: 'Wellness', percentage: getProgressPercentage('wellness'), showAdd: getProgressPercentage('wellness') === 0 },
   ];
 
-  const totalProgress = 95;
+  const totalProgress = assessmentSummary?.overallProgress || 0;
+
+  // Get result display text
+  const getTKIResult = () => {
+    if (assessmentSummary?.tki) {
+      return `Style: ${assessmentSummary.tki.dominantResult}`;
+    }
+    return 'Explore Your Conflict Management Approach';
+  };
+
+  const getWellnessResult = () => {
+    if (assessmentSummary?.wellness) {
+      return `Light Score: ${assessmentSummary.wellness.overallScore}%`;
+    }
+    return 'Assess Your Holistic Well-Being';
+  };
+
+  const get360Result = () => {
+    if (assessmentSummary?.self_360) {
+      return `Self Rating: ${assessmentSummary.self_360.dominantResult}`;
+    }
+    return 'Multi-Faceted Leadership Perspectives';
+  };
 
   return (
     <div className="min-h-screen bg-[#f0f5f5] flex">
@@ -101,15 +180,15 @@ export default function DashboardPage() {
               icon={<Brain className="w-6 h-6" />}
               title="MBTI Personality"
               description="Understanding your natural preferences"
-              status="completed"
+              status={getAssessmentStatus('mbti')}
               badge="External link"
               badgeColor="bg-gray-100 text-gray-600"
             />
             <EvaluationCard
               icon={<MessageSquare className="w-6 h-6" />}
               title="TKI Conflict Style"
-              description="Explore Your Conflict Management Approach"
-              status="not_started"
+              description={getTKIResult()}
+              status={getAssessmentStatus('tki')}
               badge="ARISE Platform"
               badgeColor="bg-[#0D5C5C]/10 text-[#0D5C5C]"
               onAction={() => router.push('/dashboard/tki')}
@@ -117,8 +196,8 @@ export default function DashboardPage() {
             <EvaluationCard
               icon={<Users className="w-6 h-6" />}
               title="360° Feedback"
-              description="Multi-Faceted Leadership Perspectives"
-              status="not_started"
+              description={get360Result()}
+              status={getAssessmentStatus('self_360')}
               badge="ARISE Platform"
               badgeColor="bg-[#0D5C5C]/10 text-[#0D5C5C]"
               onAction={() => router.push('/dashboard/360-self')}
@@ -126,8 +205,8 @@ export default function DashboardPage() {
             <EvaluationCard
               icon={<Heart className="w-6 h-6" />}
               title="Wellness"
-              description="Assess Your Holistic Well-Being"
-              status="not_started"
+              description={getWellnessResult()}
+              status={getAssessmentStatus('wellness')}
               onAction={() => router.push('/dashboard/wellness')}
             />
           </div>

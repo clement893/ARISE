@@ -41,6 +41,7 @@ model User {
   
   // Relations
   subscription  Subscription?
+  assessments   AssessmentResult[]
 }
 
 model Subscription {
@@ -94,4 +95,31 @@ enum SubscriptionStatus {
   cancelled
   expired
   pending
+}
+
+// Assessment Results
+model AssessmentResult {
+  id              Int              @id @default(autoincrement())
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  assessmentType  AssessmentType
+  answers         Json             // Store all answers as JSON
+  scores          Json             // Store calculated scores as JSON
+  dominantResult  String?          // e.g., "ENFJ" for MBTI, "Collaborating" for TKI
+  overallScore    Int?             // Percentage score (0-100)
+  
+  completedAt     DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([userId, assessmentType])
+  @@index([userId])
+}
+
+enum AssessmentType {
+  tki
+  wellness
+  self_360
+  mbti
 }
