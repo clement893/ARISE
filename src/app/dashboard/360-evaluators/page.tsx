@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
-import { ArrowLeft, Users, Mail, Plus, X, Send, UserPlus, Briefcase, UserCheck, ChevronDown, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Users, Mail, Plus, X, Send, UserPlus, Briefcase, UserCheck, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 
 interface User {
   id: number;
@@ -14,11 +14,13 @@ interface User {
 }
 
 interface Evaluator {
-  id: string;
+  id: number;
   name: string;
   email: string;
   relationship: 'manager' | 'peer' | 'direct_report' | 'other';
-  status: 'pending' | 'sent' | 'completed';
+  status: 'pending' | 'invited' | 'started' | 'completed';
+  inviteSentAt?: string;
+  completedAt?: string;
 }
 
 const relationshipOptions = [
@@ -36,7 +38,9 @@ export default function AddEvaluatorsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEvaluator, setNewEvaluator] = useState({ name: '', email: '', relationship: 'peer' as const });
   const [sendingInvites, setSendingInvites] = useState(false);
+  const [addingEvaluator, setAddingEvaluator] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const userData = localStorage.getItem('arise_user');
@@ -46,15 +50,22 @@ export default function AddEvaluatorsPage() {
     }
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
-    
-    // Load saved evaluators from localStorage
-    const savedEvaluators = localStorage.getItem(`arise_evaluators_${parsedUser.id}`);
-    if (savedEvaluators) {
-      setEvaluators(JSON.parse(savedEvaluators));
-    }
-    
-    setIsLoading(false);
+    fetchEvaluators(parsedUser.id);
   }, [router]);
+
+  const fetchEvaluators = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/evaluators?userId=${userId}`);
+      const data = await response.json();
+      if (response.ok) {
+        setEvaluators(data.evaluators);
+      }
+    } catch (error) {
+      console.error('Failed to fetch evaluators:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('arise_user');
@@ -62,59 +73,84 @@ export default function AddEvaluatorsPage() {
     router.push('/');
   };
 
-  const handleAddEvaluator = () => {
-    if (!newEvaluator.name || !newEvaluator.email) return;
+  const handleAddEvaluator = async () => {
+    if (!newEvaluator.name || !newEvaluator.email || !user) return;
     
-    const evaluator: Evaluator = {
-      id: Date.now().toString(),
-      name: newEvaluator.name,
-      email: newEvaluator.email,
-      relationship: newEvaluator.relationship,
-      status: 'pending',
-    };
-    
-    const updatedEvaluators = [...evaluators, evaluator];
-    setEvaluators(updatedEvaluators);
-    
-    // Save to localStorage
-    if (user) {
-      localStorage.setItem(`arise_evaluators_${user.id}`, JSON.stringify(updatedEvaluators));
+    setAddingEvaluator(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/evaluators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          name: newEvaluator.name,
+          email: newEvaluator.email,
+          relationship: newEvaluator.relationship,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setEvaluators(prev => [data.evaluator, ...prev]);
+        setNewEvaluator({ name: '', email: '', relationship: 'peer' });
+        setShowAddForm(false);
+        setSuccessMessage(`${newEvaluator.name} has been added. You'll receive a confirmation email.`);
+        setTimeout(() => setSuccessMessage(''), 5000);
+      } else {
+        setErrorMessage(data.error || 'Failed to add evaluator');
+      }
+    } catch (error) {
+      setErrorMessage('Failed to add evaluator. Please try again.');
+    } finally {
+      setAddingEvaluator(false);
     }
-    
-    setNewEvaluator({ name: '', email: '', relationship: 'peer' });
-    setShowAddForm(false);
   };
 
-  const handleRemoveEvaluator = (id: string) => {
-    const updatedEvaluators = evaluators.filter(e => e.id !== id);
-    setEvaluators(updatedEvaluators);
-    
-    if (user) {
-      localStorage.setItem(`arise_evaluators_${user.id}`, JSON.stringify(updatedEvaluators));
+  const handleRemoveEvaluator = async (id: number) => {
+    try {
+      const response = await fetch(`/api/evaluators?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setEvaluators(prev => prev.filter(e => e.id !== id));
+      }
+    } catch (error) {
+      console.error('Failed to remove evaluator:', error);
     }
   };
 
   const handleSendInvites = async () => {
+    if (!user) return;
+    
     setSendingInvites(true);
-    
-    // Simulate sending invites
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const updatedEvaluators = evaluators.map(e => ({
-      ...e,
-      status: e.status === 'pending' ? 'sent' as const : e.status,
-    }));
-    
-    setEvaluators(updatedEvaluators);
-    
-    if (user) {
-      localStorage.setItem(`arise_evaluators_${user.id}`, JSON.stringify(updatedEvaluators));
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/evaluators/send-invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Refresh evaluators list
+        await fetchEvaluators(user.id);
+        setSuccessMessage(`${data.results.success} invitation(s) sent successfully! You've been CC'd on each email.`);
+        setTimeout(() => setSuccessMessage(''), 5000);
+      } else {
+        setErrorMessage(data.error || 'Failed to send invitations');
+      }
+    } catch (error) {
+      setErrorMessage('Failed to send invitations. Please try again.');
+    } finally {
+      setSendingInvites(false);
     }
-    
-    setSendingInvites(false);
-    setSuccessMessage('Invitations sent successfully! Your evaluators will receive an email with instructions.');
-    
-    setTimeout(() => setSuccessMessage(''), 5000);
   };
 
   const getRelationshipIcon = (relationship: string) => {
@@ -130,16 +166,38 @@ export default function AddEvaluatorsPage() {
   const getStatusBadge = (status: Evaluator['status']) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">Pending</span>;
-      case 'sent':
-        return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600">Invited</span>;
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            Pending
+          </span>
+        );
+      case 'invited':
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600 flex items-center gap-1">
+            <Mail className="w-3 h-3" />
+            Invited
+          </span>
+        );
+      case 'started':
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-600 flex items-center gap-1">
+            <RefreshCw className="w-3 h-3" />
+            In Progress
+          </span>
+        );
       case 'completed':
-        return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600">Completed</span>;
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600 flex items-center gap-1">
+            <CheckCircle className="w-3 h-3" />
+            Completed
+          </span>
+        );
     }
   };
 
   const pendingCount = evaluators.filter(e => e.status === 'pending').length;
-  const sentCount = evaluators.filter(e => e.status === 'sent').length;
+  const invitedCount = evaluators.filter(e => e.status === 'invited' || e.status === 'started').length;
   const completedCount = evaluators.filter(e => e.status === 'completed').length;
 
   if (isLoading || !user) {
@@ -173,8 +231,19 @@ export default function AddEvaluatorsPage() {
           {/* Success Message */}
           {successMessage && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500" />
+              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
               <p className="text-green-700">{successMessage}</p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <p className="text-red-700">{errorMessage}</p>
+              <button onClick={() => setErrorMessage('')} className="ml-auto text-red-500 hover:text-red-700">
+                <X className="w-4 h-4" />
+              </button>
             </div>
           )}
 
@@ -215,7 +284,7 @@ export default function AddEvaluatorsPage() {
                 <p className="text-sm text-gray-500">Pending</p>
               </div>
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-                <p className="text-2xl font-bold text-blue-500">{sentCount}</p>
+                <p className="text-2xl font-bold text-blue-500">{invitedCount}</p>
                 <p className="text-sm text-gray-500">Invited</p>
               </div>
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
@@ -276,6 +345,7 @@ export default function AddEvaluatorsPage() {
                           <button
                             onClick={() => handleRemoveEvaluator(evaluator.id)}
                             className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                            title="Remove evaluator"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -313,16 +383,19 @@ export default function AddEvaluatorsPage() {
           <div className="mt-6 p-4 bg-[#0D5C5C]/5 rounded-xl flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-[#0D5C5C] flex-shrink-0 mt-0.5" />
             <div className="text-sm text-gray-600">
-              <p className="font-medium text-gray-900 mb-1">Important</p>
-              <p>
-                We recommend completing your self-assessment before your evaluators submit their feedback. 
-                This allows for a more meaningful comparison between your self-perception and others' perspectives.
-              </p>
+              <p className="font-medium text-gray-900 mb-1">How it works</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Add evaluators and click "Send invitations"</li>
+                <li>Each evaluator receives a unique link to provide feedback</li>
+                <li>You'll be CC'd on all invitation emails</li>
+                <li>You'll be notified when each evaluator completes their feedback</li>
+                <li>All responses are anonymous and aggregated</li>
+              </ul>
               <button
                 onClick={() => router.push('/dashboard/360-self')}
-                className="mt-2 text-[#0D5C5C] font-medium hover:underline"
+                className="mt-3 text-[#0D5C5C] font-medium hover:underline"
               >
-                Start self-assessment →
+                Complete your self-assessment first →
               </button>
             </div>
           </div>
@@ -335,7 +408,10 @@ export default function AddEvaluatorsPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Add Evaluator</h3>
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setErrorMessage('');
+                  }}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-gray-500" />
@@ -397,17 +473,27 @@ export default function AddEvaluatorsPage() {
 
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setErrorMessage('');
+                  }}
                   className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddEvaluator}
-                  disabled={!newEvaluator.name || !newEvaluator.email}
-                  className="flex-1 py-2 bg-[#0D5C5C] text-white rounded-lg font-medium hover:bg-[#0a4a4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!newEvaluator.name || !newEvaluator.email || addingEvaluator}
+                  className="flex-1 py-2 bg-[#0D5C5C] text-white rounded-lg font-medium hover:bg-[#0a4a4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Add Evaluator
+                  {addingEvaluator ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Evaluator'
+                  )}
                 </button>
               </div>
             </div>

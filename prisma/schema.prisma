@@ -46,6 +46,7 @@ model User {
   // Relations
   subscription  Subscription?
   assessments   AssessmentResult[]
+  evaluators    Evaluator[]
 }
 
 model Subscription {
@@ -128,4 +129,51 @@ enum AssessmentType {
   wellness
   self_360
   mbti
+}
+
+// 360° Feedback Evaluators
+model Evaluator {
+  id              Int              @id @default(autoincrement())
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Evaluator info
+  name            String
+  email           String
+  relationship    EvaluatorRelationship
+  
+  // Invitation tracking
+  token           String           @unique @default(uuid())
+  status          EvaluatorStatus  @default(pending)
+  
+  // Email tracking
+  inviteSentAt    DateTime?
+  reminderSentAt  DateTime?
+  
+  // Feedback
+  feedbackAnswers Json?            // Store feedback answers as JSON
+  feedbackScores  Json?            // Store calculated scores as JSON
+  completedAt     DateTime?
+  
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([userId, email])
+  @@index([userId])
+  @@index([token])
+}
+
+enum EvaluatorRelationship {
+  manager
+  peer
+  direct_report
+  other
+}
+
+enum EvaluatorStatus {
+  pending
+  invited
+  started
+  completed
 }

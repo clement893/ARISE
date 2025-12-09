@@ -17,6 +17,7 @@ interface EmailContent {
 
 interface SendEmailParams {
   to: EmailRecipient | EmailRecipient[];
+  cc?: EmailRecipient | EmailRecipient[];
   subject: string;
   text?: string;
   html?: string;
@@ -54,12 +55,18 @@ export async function sendEmail(params: SendEmailParams): Promise<SendGridRespon
     content.push({ type: 'text/html', value: params.html });
   }
 
+  const ccRecipients = params.cc ? (Array.isArray(params.cc) ? params.cc : [params.cc]) : [];
+
+  const personalization: any = {
+    to: toRecipients.map(r => ({ email: r.email, name: r.name })),
+  };
+
+  if (ccRecipients.length > 0) {
+    personalization.cc = ccRecipients.map(r => ({ email: r.email, name: r.name }));
+  }
+
   const payload = {
-    personalizations: [
-      {
-        to: toRecipients.map(r => ({ email: r.email, name: r.name })),
-      }
-    ],
+    personalizations: [personalization],
     from: {
       email: fromEmail.email,
       name: fromEmail.name,
@@ -272,10 +279,11 @@ export async function sendEvaluatorInviteEmail(params: {
   evaluatorEmail: string;
   evaluatorName: string;
   userName: string;
+  userEmail: string;
   relationship: string;
   feedbackUrl: string;
 }): Promise<SendGridResponse> {
-  const { evaluatorEmail, evaluatorName, userName, relationship, feedbackUrl } = params;
+  const { evaluatorEmail, evaluatorName, userName, userEmail, relationship, feedbackUrl } = params;
 
   const subject = `${userName} has invited you to provide 360° feedback`;
 
@@ -363,6 +371,303 @@ All responses are anonymous and will be aggregated with other feedback.
 Provide Feedback: ${feedbackUrl}
 
 Thank you for taking the time to support ${userName}'s leadership development.
+
+Best regards,
+The ARISE Human Capital Team
+  `;
+
+  return sendEmail({
+    to: { email: evaluatorEmail, name: evaluatorName },
+    cc: { email: userEmail, name: userName },
+    subject,
+    html,
+    text,
+  });
+}
+
+/**
+ * Send confirmation email when an evaluator is added
+ */
+export async function sendEvaluatorAddedConfirmation(params: {
+  userEmail: string;
+  userName: string;
+  evaluatorName: string;
+  evaluatorEmail: string;
+  relationship: string;
+}): Promise<SendGridResponse> {
+  const { userEmail, userName, evaluatorName, evaluatorEmail, relationship } = params;
+
+  const subject = `Evaluator added: ${evaluatorName}`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f5f5;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f5f5;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0D5C5C; padding: 30px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">ARISE</h1>
+              <p style="margin: 8px 0 0; color: #D4A84B; font-size: 12px; letter-spacing: 1px;">EVALUATOR ADDED</p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 30px 40px;">
+              <h2 style="margin: 0 0 15px; color: #0D5C5C; font-size: 20px;">Hi ${userName},</h2>
+              
+              <p style="margin: 0 0 15px; color: #4a5568; font-size: 15px; line-height: 1.6;">
+                You have successfully added a new evaluator to your 360° feedback:
+              </p>
+              
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0; background-color: #f7fafc; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin: 0 0 8px; color: #0D5C5C; font-weight: 600; font-size: 16px;">${evaluatorName}</p>
+                    <p style="margin: 0 0 5px; color: #718096; font-size: 14px;">${evaluatorEmail}</p>
+                    <p style="margin: 0; color: #718096; font-size: 14px;">Relationship: ${relationship}</p>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 15px 0 0; color: #718096; font-size: 14px; line-height: 1.6;">
+                When you're ready, go to your dashboard to send the invitation.
+              </p>
+              
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 25px 0;">
+                <tr>
+                  <td style="text-align: center;">
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-d62b.up.railway.app'}/dashboard/360-evaluators" 
+                       style="display: inline-block; padding: 12px 30px; background-color: #D4A84B; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 8px;">
+                      Manage Evaluators
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #2D2D2D; padding: 20px 40px; text-align: center;">
+              <p style="margin: 0; color: #D4A84B; font-size: 14px; font-weight: 600;">ARISE Human Capital</p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `
+Hi ${userName},
+
+You have successfully added a new evaluator to your 360° feedback:
+
+Name: ${evaluatorName}
+Email: ${evaluatorEmail}
+Relationship: ${relationship}
+
+When you're ready, go to your dashboard to send the invitation.
+
+Manage Evaluators: ${process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-d62b.up.railway.app'}/dashboard/360-evaluators
+
+Best regards,
+The ARISE Human Capital Team
+  `;
+
+  return sendEmail({
+    to: { email: userEmail, name: userName },
+    subject,
+    html,
+    text,
+  });
+}
+
+/**
+ * Send confirmation email when evaluator completes feedback
+ */
+export async function sendFeedbackCompletedEmail(params: {
+  userEmail: string;
+  userName: string;
+  evaluatorName: string;
+  relationship: string;
+}): Promise<SendGridResponse> {
+  const { userEmail, userName, evaluatorName, relationship } = params;
+
+  const subject = `${evaluatorName} has completed their 360° feedback!`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f5f5;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f5f5;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0D5C5C; padding: 30px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">ARISE</h1>
+              <p style="margin: 8px 0 0; color: #D4A84B; font-size: 12px; letter-spacing: 1px;">FEEDBACK RECEIVED ✅</p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 30px 40px;">
+              <h2 style="margin: 0 0 15px; color: #0D5C5C; font-size: 20px;">Great news, ${userName}!</h2>
+              
+              <p style="margin: 0 0 15px; color: #4a5568; font-size: 15px; line-height: 1.6;">
+                <strong>${evaluatorName}</strong> (${relationship}) has completed their 360° feedback for you.
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #718096; font-size: 14px; line-height: 1.6;">
+                Their responses have been recorded and will be included in your aggregated feedback report.
+              </p>
+              
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 25px 0;">
+                <tr>
+                  <td style="text-align: center;">
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-d62b.up.railway.app'}/dashboard/360-evaluators" 
+                       style="display: inline-block; padding: 12px 30px; background-color: #D4A84B; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 8px;">
+                      View Progress
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #2D2D2D; padding: 20px 40px; text-align: center;">
+              <p style="margin: 0; color: #D4A84B; font-size: 14px; font-weight: 600;">ARISE Human Capital</p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `
+Great news, ${userName}!
+
+${evaluatorName} (${relationship}) has completed their 360° feedback for you.
+
+Their responses have been recorded and will be included in your aggregated feedback report.
+
+View Progress: ${process.env.NEXT_PUBLIC_APP_URL || 'https://web-production-d62b.up.railway.app'}/dashboard/360-evaluators
+
+Best regards,
+The ARISE Human Capital Team
+  `;
+
+  return sendEmail({
+    to: { email: userEmail, name: userName },
+    subject,
+    html,
+    text,
+  });
+}
+
+/**
+ * Send thank you email to evaluator after completing feedback
+ */
+export async function sendEvaluatorThankYouEmail(params: {
+  evaluatorEmail: string;
+  evaluatorName: string;
+  userName: string;
+}): Promise<SendGridResponse> {
+  const { evaluatorEmail, evaluatorName, userName } = params;
+
+  const subject = `Thank you for your feedback!`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f5f5;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f5f5;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0D5C5C; padding: 30px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">ARISE</h1>
+              <p style="margin: 8px 0 0; color: #D4A84B; font-size: 12px; letter-spacing: 1px;">THANK YOU!</p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 30px 40px;">
+              <h2 style="margin: 0 0 15px; color: #0D5C5C; font-size: 20px;">Thank you, ${evaluatorName}!</h2>
+              
+              <p style="margin: 0 0 15px; color: #4a5568; font-size: 15px; line-height: 1.6;">
+                Your feedback for <strong>${userName}</strong> has been successfully submitted.
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #718096; font-size: 14px; line-height: 1.6;">
+                Your honest insights will help ${userName} understand their leadership strengths and identify areas for growth. This kind of feedback is invaluable for professional development.
+              </p>
+              
+              <p style="margin: 0; color: #718096; font-size: 14px; line-height: 1.6;">
+                Thank you for taking the time to contribute to their leadership journey.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #2D2D2D; padding: 20px 40px; text-align: center;">
+              <p style="margin: 0; color: #D4A84B; font-size: 14px; font-weight: 600;">ARISE Human Capital</p>
+              <p style="margin: 8px 0 0; color: #9ca3af; font-size: 11px;">Empowering Authentic Leaders</p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `
+Thank you, ${evaluatorName}!
+
+Your feedback for ${userName} has been successfully submitted.
+
+Your honest insights will help ${userName} understand their leadership strengths and identify areas for growth. This kind of feedback is invaluable for professional development.
+
+Thank you for taking the time to contribute to their leadership journey.
 
 Best regards,
 The ARISE Human Capital Team
