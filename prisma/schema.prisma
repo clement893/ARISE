@@ -28,6 +28,7 @@ model User {
   
   // User type and plan
   userType      UserType     @default(individual)
+  role          UserRole     @default(participant)
   plan          PlanType     @default(starter)
   billingCycle  BillingCycle @default(monthly)
   
@@ -88,6 +89,12 @@ enum UserType {
   individual
   coach
   business
+}
+
+enum UserRole {
+  participant
+  coach
+  admin
 }
 
 enum PlanType {
@@ -184,4 +191,32 @@ enum EvaluatorStatus {
   invited
   started
   completed
+}
+
+// Admin Assessment Configuration
+model AssessmentConfig {
+  id              Int              @id @default(autoincrement())
+  assessmentType  String           @unique
+  name            String
+  description     String?
+  duration        Int              @default(15)
+  questionCount   Int              @default(30)
+  isActive        Boolean          @default(true)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+// Assessment Questions (Admin configurable)
+model AssessmentQuestion {
+  id              Int              @id @default(autoincrement())
+  assessmentType  String
+  text            String
+  category        String?
+  order           Int              @default(0)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([assessmentType])
 }
