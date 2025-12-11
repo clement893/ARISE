@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { Button, Badge } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { buttonVariants } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
 
 export default function Hero() {
@@ -33,16 +35,13 @@ export default function Hero() {
           </p>
 
           {/* CTA Button */}
-          <Button 
-            variant="dark" 
-            size="lg" 
-            rightIcon={<ArrowRight className="h-4 w-4" />}
-            asChild
+          <Link 
+            href="/signup"
+            className={cn(buttonVariants({ variant: 'dark', size: 'lg' }), 'inline-flex items-center gap-2')}
           >
-            <Link href="/signup">
-              Begin assessment
-            </Link>
-          </Button>
+            Begin assessment
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
       </div>
 

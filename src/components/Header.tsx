@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Button } from '@/components/ui';
+import { buttonVariants } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 import { Menu, X } from 'lucide-react';
 
 export default function Header() {
@@ -47,11 +48,12 @@ export default function Header() {
             <Link href="/login" className="text-white/90 hover:text-white text-sm font-medium transition-colors">
               Sign in
             </Link>
-            <Button variant="secondary" size="sm" asChild>
-              <Link href="/signup">
-                Get Started →
-              </Link>
-            </Button>
+            <Link 
+              href="/signup"
+              className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }))}
+            >
+              Get Started →
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -91,11 +93,13 @@ export default function Header() {
               >
                 Sign in
               </Link>
-              <Button variant="secondary" size="sm" fullWidth onClick={() => setIsMenuOpen(false)} asChild>
-                <Link href="/signup">
-                  Get Started →
-                </Link>
-              </Button>
+              <Link 
+                href="/signup"
+                className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'w-full text-center')}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Get Started →
+              </Link>
             </nav>
           </div>
         )}

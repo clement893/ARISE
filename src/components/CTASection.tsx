@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { Button, Card, CardContent } from '@/components/ui';
+import { Card, CardContent } from '@/components/ui';
+import { buttonVariants } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 export default function CTASection() {
   return (
@@ -15,16 +17,18 @@ export default function CTASection() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
-              <Button variant="dark" size="lg" asChild>
-                <Link href="/signup">
-                  Schedule a demo
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="bg-white hover:bg-neutral-100" asChild>
-                <Link href="/pricing">
-                  Explore our tools
-                </Link>
-              </Button>
+              <Link 
+                href="/signup"
+                className={cn(buttonVariants({ variant: 'dark', size: 'lg' }))}
+              >
+                Schedule a demo
+              </Link>
+              <Link 
+                href="/pricing"
+                className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'bg-white hover:bg-neutral-100')}
+              >
+                Explore our tools
+              </Link>
             </div>
           </CardContent>
         </Card>
