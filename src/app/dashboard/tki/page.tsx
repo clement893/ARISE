@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Button, Card, LoadingPage } from '@/components/ui';
 
 interface User {
   id: number;
@@ -113,13 +114,11 @@ export default function TKITestPage() {
     if (currentQuestion < tkiQuestions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
-      // Calculate final scores
       const finalScores = calculateScores();
       const dominant = getDominantMode(finalScores);
       const maxScore = Math.max(...Object.values(finalScores));
       const overallScore = Math.round((maxScore / 12) * 100);
 
-      // Save to database
       try {
         await fetch('/api/assessments', {
           method: 'POST',
@@ -182,11 +181,7 @@ export default function TKITestPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0D5C5C] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#D4A84B]"></div>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!user) {
@@ -204,12 +199,14 @@ export default function TKITestPage() {
       <main className="flex-1 p-8 overflow-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <button 
+          <Button 
+            variant="ghost"
+            size="sm"
             onClick={() => router.push('/dashboard')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            leftIcon={<ArrowLeft className="w-5 h-5" />}
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
+            Back
+          </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">TKI Assessment</h1>
             <p className="text-gray-600">Thomas-Kilmann Conflict Mode Instrument</p>
@@ -219,7 +216,7 @@ export default function TKITestPage() {
         {/* Introduction Step */}
         {currentStep === 'intro' && (
           <div className="max-w-3xl mx-auto">
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <Card className="p-8">
               <div className="text-center mb-8">
                 <div className="w-20 h-20 bg-[#0D5C5C] rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl">⚖️</span>
@@ -229,34 +226,34 @@ export default function TKITestPage() {
               </div>
 
               <div className="grid md:grid-cols-2 gap-4 mb-8">
-                <div className="bg-gray-50 rounded-lg p-4">
+                <Card variant="bordered" className="p-4 bg-gray-50">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">📊</span>
                     <span className="font-semibold text-gray-900">30 Questions</span>
                   </div>
                   <p className="text-sm text-gray-600">Paired statements to choose from</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
+                </Card>
+                <Card variant="bordered" className="p-4 bg-gray-50">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">⏱️</span>
                     <span className="font-semibold text-gray-900">10-15 Minutes</span>
                   </div>
                   <p className="text-sm text-gray-600">Estimated completion time</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
+                </Card>
+                <Card variant="bordered" className="p-4 bg-gray-50">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">🎯</span>
                     <span className="font-semibold text-gray-900">5 Conflict Styles</span>
                   </div>
                   <p className="text-sm text-gray-600">Competing, Collaborating, Compromising, Avoiding, Accommodating</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
+                </Card>
+                <Card variant="bordered" className="p-4 bg-gray-50">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">💡</span>
                     <span className="font-semibold text-gray-900">Instant Results</span>
                   </div>
                   <p className="text-sm text-gray-600">Get your dominant style immediately</p>
-                </div>
+                </Card>
               </div>
 
               <div className="bg-[#e8f4f4] rounded-lg p-4 mb-8">
@@ -267,13 +264,15 @@ export default function TKITestPage() {
                 </p>
               </div>
 
-              <button
+              <Button
+                variant="primary"
+                fullWidth
+                size="lg"
                 onClick={() => setCurrentStep('questions')}
-                className="w-full bg-[#0D5C5C] hover:bg-[#0a4a4a] text-white py-4 rounded-xl font-semibold text-lg transition-colors"
               >
                 Start Assessment
-              </button>
-            </div>
+              </Button>
+            </Card>
           </div>
         )}
 
@@ -294,7 +293,7 @@ export default function TKITestPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <Card className="p-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
                 Which statement best describes your behavior in conflict situations?
               </h2>
@@ -345,33 +344,25 @@ export default function TKITestPage() {
 
               {/* Navigation */}
               <div className="flex justify-between">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={handlePrevious}
                   disabled={currentQuestion === 0}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-                    currentQuestion === 0
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                  leftIcon={<ArrowLeft className="w-5 h-5" />}
                 >
-                  <ArrowLeft className="w-5 h-5" />
                   Previous
-                </button>
+                </Button>
 
-                <button
+                <Button
+                  variant="primary"
                   onClick={handleNext}
                   disabled={!answers[currentQuestion]}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-                    !answers[currentQuestion]
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-[#0D5C5C] text-white hover:bg-[#0a4a4a]'
-                  }`}
+                  rightIcon={<ArrowRight className="w-5 h-5" />}
                 >
                   {currentQuestion === tkiQuestions.length - 1 ? 'View Results' : 'Next'}
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           </div>
         )}
 
@@ -386,7 +377,7 @@ export default function TKITestPage() {
             </div>
 
             {/* Dominant Style */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 mb-6">
+            <Card className="p-8 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Dominant Conflict Style</h3>
               <div className="flex items-center gap-6 p-6 rounded-xl" style={{ backgroundColor: `${modeDescriptions[dominantMode].color}15` }}>
                 <div 
@@ -402,10 +393,10 @@ export default function TKITestPage() {
                   <p className="text-gray-600 mt-2">{modeDescriptions[dominantMode].description}</p>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* All Scores */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 mb-6">
+            <Card className="p-8 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Your Complete Profile</h3>
               <div className="space-y-4">
                 {(Object.entries(scores) as [TKIMode, number][])
@@ -430,10 +421,10 @@ export default function TKITestPage() {
                     </div>
                   ))}
               </div>
-            </div>
+            </Card>
 
             {/* Style Descriptions */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 mb-6">
+            <Card className="p-8 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Understanding the Five Styles</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 {(Object.entries(modeDescriptions) as [TKIMode, typeof modeDescriptions[TKIMode]][]).map(([mode, info]) => (
@@ -447,22 +438,26 @@ export default function TKITestPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
             {/* Actions */}
             <div className="flex gap-4">
-              <button
+              <Button
+                variant="primary"
+                fullWidth
+                size="lg"
                 onClick={() => router.push('/dashboard/results')}
-                className="flex-1 bg-[#0D5C5C] hover:bg-[#0a4a4a] text-white py-4 rounded-xl font-semibold transition-colors"
               >
                 View All Results
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                fullWidth
+                size="lg"
                 onClick={() => router.push('/dashboard')}
-                className="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-4 rounded-xl font-semibold transition-colors"
               >
                 Back to Dashboard
-              </button>
+              </Button>
             </div>
           </div>
         )}

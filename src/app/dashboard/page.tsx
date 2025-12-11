@@ -8,6 +8,7 @@ import ProgressCard from '@/components/dashboard/ProgressCard';
 import EvaluationCard from '@/components/dashboard/EvaluationCard';
 import CoachingCTA from '@/components/dashboard/CoachingCTA';
 import { Brain, Users, MessageSquare, Heart } from 'lucide-react';
+import { LoadingPage } from '@/components/ui';
 
 interface User {
   id: number;
@@ -50,20 +51,16 @@ export default function DashboardPage() {
   const [assessmentSummary, setAssessmentSummary] = useState<AssessmentSummary | null>(null);
 
   useEffect(() => {
-    // Check for user in localStorage (from signup flow)
     const storedUser = localStorage.getItem('arise_user');
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
-        // Fetch assessment results
         fetchAssessments(userData.id);
       } catch {
-        // Invalid data, redirect to login
         router.push('/signup');
       }
     } else {
-      // No user, redirect to signup
       router.push('/signup');
     }
     setLoading(false);
@@ -92,18 +89,13 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0D5C5C] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#D4A84B]"></div>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!user) {
     return null;
   }
 
-  // Calculate progress based on actual assessment results
   const getAssessmentStatus = (type: 'tki' | 'wellness' | 'self_360' | 'mbti') => {
     if (!assessmentSummary) return 'not_started';
     const result = assessmentSummary[type];
@@ -125,7 +117,6 @@ export default function DashboardPage() {
 
   const totalProgress = assessmentSummary?.overallProgress || 0;
 
-  // Get result display text
   const getTKIResult = () => {
     if (assessmentSummary?.tki) {
       return `Style: ${assessmentSummary.tki.dominantResult}`;
@@ -149,10 +140,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f0f5f5] flex">
-      {/* Sidebar */}
       <Sidebar user={user} onLogout={handleLogout} />
 
-      {/* Main Content */}
       <main className="flex-1 p-8 overflow-auto">
         {/* Welcome Header */}
         <div className="mb-6">
