@@ -96,4 +96,11 @@
 ## Correction contraste page principale
 - [x] Corriger Hero.tsx (sous-titre text-white/80 -> text-white)
 - [x] Corriger Header.tsx (liens navigation text-white/90 -> text-white)
+- [x] Pousser sur GitHub (commit b38e692)
+
+
+## Correction CSS global écrasant Tailwind
+- [x] Identifier le problème: p et a avaient des couleurs par défaut
+- [x] Supprimer color: var(--color-text-secondary) de p
+- [x] Supprimer color: var(--color-primary-500) de a
 - [ ] Pousser sur GitHub
