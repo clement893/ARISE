@@ -1,46 +1,54 @@
-// UI Components Library for ARISE
-// Import these components instead of copy-pasting code
+// UI Components Library for ARISE Design System
+// Central export file for all reusable UI components with cva variants
 
 // Button
-export { default as Button } from './Button';
-export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
+export { Button, buttonVariants } from './Button';
+export type { ButtonProps } from './Button';
 
 // Card
-export { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent, 
-  CardFooter 
-} from './Card';
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, cardVariants } from './Card';
+export type { CardProps } from './Card';
 
 // Badge
-export { default as Badge } from './Badge';
-export type { BadgeProps, BadgeVariant, BadgeSize } from './Badge';
+export { Badge, BadgeGroup, StatusBadge, RoleBadge, badgeVariants } from './Badge';
+export type { BadgeProps } from './Badge';
 
-// Modal
-export { default as Modal, ConfirmModal } from './Modal';
-export type { ModalProps, ConfirmModalProps, ModalSize } from './Modal';
+// Modal & Alert
+export { Modal, ModalFooter, ConfirmModal, Alert, modalVariants, alertVariants } from './Modal';
+export type { ModalProps, ConfirmModalProps, AlertProps } from './Modal';
 
-// Input
-export { default as Input } from './Input';
-export type { InputProps } from './Input';
+// Input & Form Fields
+export { Input, Textarea, PasswordInput, Checkbox, inputVariants } from './Input';
+export type { InputProps, TextareaProps, PasswordInputProps, CheckboxProps } from './Input';
 
 // Select
-export { default as Select } from './Select';
+export { Select, selectVariants } from './Select';
 export type { SelectProps, SelectOption } from './Select';
 
-// Spinner & Loading
+// Loading & Skeleton
 export { 
-  default as Spinner, 
+  Spinner, 
   LoadingPage, 
   LoadingInline, 
-  Skeleton 
-} from './Spinner';
-export type { SpinnerProps, SpinnerSize, SpinnerColor, LoadingPageProps, SkeletonProps } from './Spinner';
+  LoadingOverlay,
+  Skeleton, 
+  SkeletonText, 
+  SkeletonCard, 
+  SkeletonTable,
+  spinnerVariants,
+  skeletonVariants 
+} from './Loader';
+export type { SpinnerProps, SkeletonProps } from './Loader';
 
-// Avatar
+// Navigation
+export { Navbar, NavLink, NavDropdown, NavDropdownItem, navbarVariants, navLinkVariants } from './Navbar';
+export type { NavbarProps, NavLinkProps } from './Navbar';
+
+// List
+export { List, ListItem, ListItemText, DataList, DataListItem, EmptyState, listVariants, listItemVariants } from './List';
+export type { ListProps, ListItemProps } from './List';
+
+// Avatar (if exists)
 export { default as Avatar, AvatarGroup } from './Avatar';
 export type { AvatarProps, AvatarSize, AvatarGroupProps } from './Avatar';
 
