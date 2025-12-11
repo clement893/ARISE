@@ -1,6 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { Badge } from '@/components/ui';
-import { buttonVariants } from '@/components/ui/Button';
+import { buttonVariants } from '@/lib/button-variants';
 import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
 

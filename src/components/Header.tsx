@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { buttonVariants } from '@/components/ui/Button';
+import { buttonVariants } from '@/lib/button-variants';
 import { cn } from '@/lib/utils';
 import { Menu, X } from 'lucide-react';
 
