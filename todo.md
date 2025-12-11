@@ -47,3 +47,12 @@
 - [ ] Refactoriser src/app/about/page.tsx
 - [ ] Refactoriser src/app/privacy/page.tsx
 - [ ] Refactoriser src/app/terms/page.tsx
+
+
+## Qualité et Maintenabilité
+- [ ] Identifier et supprimer les duplications de code
+- [ ] Créer des constantes/mappings pour les listes répétées (navigation, statuts, rôles)
+- [ ] Simplifier la logique répétée avec des fonctions utilitaires
+- [ ] Ajouter des commentaires clairs et concis
+- [ ] Aligner tous les fichiers avec le design system Tailwind
+- [ ] Vérifier la cohérence des couleurs et espacements
