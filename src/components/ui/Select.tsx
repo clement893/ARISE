@@ -128,7 +128,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </p>
         )}
         {helperText && !error && (
-          <p className={cn('text-sm', darkMode ? 'text-white/70' : 'text-neutral-500')}>
+          <p className={cn('text-sm', darkMode ? 'text-white' : 'text-neutral-500')}>
             {helperText}
           </p>
         )}

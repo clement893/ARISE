@@ -249,7 +249,7 @@ function ProfilePageContent() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-white">Your profile</h1>
-                <p className="text-white/70">Update your profile information & subscription</p>
+                <p className="text-white">Update your profile information & subscription</p>
               </div>
             </div>
 

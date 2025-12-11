@@ -37,7 +37,7 @@ export default function Welcome() {
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
           Welcome to ARISE
         </h1>
-        <p className="text-white/70 text-lg mb-8 max-w-md mx-auto">
+        <p className="text-white text-lg mb-8 max-w-md mx-auto">
           Hi {firstName}, your account has been created successfully. You&apos;re ready to begin your leadership journey.
         </p>
 
@@ -51,7 +51,7 @@ export default function Welcome() {
               </div>
               <div>
                 <h3 className="text-white font-medium">Complete your first assessment</h3>
-                <p className="text-white/60 text-sm">Start with the personality assessment to understand your leadership style.</p>
+                <p className="text-white/90 text-sm">Start with the personality assessment to understand your leadership style.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -60,7 +60,7 @@ export default function Welcome() {
               </div>
               <div>
                 <h3 className="text-white font-medium">Explore your dashboard</h3>
-                <p className="text-white/60 text-sm">View your progress and access all available tools.</p>
+                <p className="text-white/90 text-sm">View your progress and access all available tools.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -69,7 +69,7 @@ export default function Welcome() {
               </div>
               <div>
                 <h3 className="text-white font-medium">Invite your team</h3>
-                <p className="text-white/60 text-sm">Get 360° feedback from colleagues and direct reports.</p>
+                <p className="text-white/90 text-sm">Get 360° feedback from colleagues and direct reports.</p>
               </div>
             </div>
           </div>

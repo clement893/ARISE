@@ -145,7 +145,7 @@ export default function WellnessResultsPage() {
             {/* Overall Score */}
             <div className="p-8 bg-gradient-to-r from-primary-500 to-primary-600">
               <div className="text-center">
-                <p className="text-white/70 text-sm mb-2">Overall Wellness Score</p>
+                <p className="text-white text-sm mb-2">Overall Wellness Score</p>
                 <div className="text-6xl font-bold text-secondary-500 mb-2">{overallScore}%</div>
                 <p className={`text-lg font-semibold ${overallScore >= 60 ? 'text-green-400' : 'text-orange-400'}`}>
                   {getScoreLabel(overallScore)}

@@ -126,11 +126,11 @@ export default function ChoosePlan() {
                 <span className="text-3xl font-bold">
                   ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice}
                 </span>
-                <span className={selectedPlan === plan.id ? 'text-white/60' : 'text-neutral-800/60'}>
+                <span className={selectedPlan === plan.id ? 'text-white' : 'text-neutral-800/60'}>
                   /month
                 </span>
               </div>
-              <p className={`text-sm mb-4 ${selectedPlan === plan.id ? 'text-white/70' : 'text-neutral-800/60'}`}>
+              <p className={`text-sm mb-4 ${selectedPlan === plan.id ? 'text-white' : 'text-neutral-800/60'}`}>
                 {plan.description}
               </p>
               <ul className="space-y-2">

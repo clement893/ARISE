@@ -81,7 +81,7 @@ export default function FourDimensions() {
             All four assessments integrate <span className="font-bold">seamlessly</span><br />
             to create your <span className="font-bold">comprehensive leadership profile</span>
           </p>
-          <p className="text-white/70 mt-4 text-sm">
+          <p className="text-white mt-4 text-sm">
             A unified, actionable roadmap tailored specifically to you.
           </p>
         </div>

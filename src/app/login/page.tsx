@@ -131,7 +131,7 @@ export default function LoginPage() {
             </div>
 
             {/* Required fields note */}
-            <p className="text-xs text-white/60">* required fields</p>
+            <p className="text-xs text-white">* required fields</p>
 
             {/* Submit button */}
             <Button
@@ -150,7 +150,7 @@ export default function LoginPage() {
                 <div className="w-full border-t border-white/20"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-primary-500 text-white/70">Or continue with</span>
+                <span className="px-4 bg-primary-500 text-white">Or continue with</span>
               </div>
             </div>
 

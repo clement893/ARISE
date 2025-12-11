@@ -351,7 +351,7 @@ export default function AdminAssessments() {
                     {assessment.name}
                   </p>
                   <p className={`text-sm ${
-                    selectedAssessment?.id === assessment.id ? 'text-white/70' : 'text-gray-500'
+                    selectedAssessment?.id === assessment.id ? 'text-white' : 'text-gray-500'
                   }`}>
                     {questions.length > 0 && selectedAssessment?.id === assessment.id 
                       ? `${questions.length} questions` 

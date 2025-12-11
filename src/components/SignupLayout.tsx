@@ -40,7 +40,7 @@ export default function SignupLayout({
       {showProgress && (
         <div className="max-w-3xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-white/60 text-xs">Step {currentStep} of {totalSteps}</span>
+            <span className="text-white text-xs">Step {currentStep} of {totalSteps}</span>
           </div>
           <div className="h-1 bg-white/20 rounded-full overflow-hidden">
             <div 

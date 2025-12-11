@@ -75,4 +75,20 @@
 - [x] Modifier la page Wellness pour auto-sauvegarder
 - [x] Modifier la page 360-self pour auto-sauvegarder
 - [x] Ajouter bouton "Continue/Start Over" sur les tests en cours
+- [x] Pousser sur GitHub (commit 7acf6df)
+
+
+## Correction textes noirs sur fond vert (contraste)
+- [x] Identifier tous les textes noirs sur fond primary-500/vert
+- [x] Corriger SignupLayout (Step X of Y)
+- [x] Corriger signup/page.tsx (descriptions)
+- [x] Corriger signup/welcome/page.tsx (textes)
+- [x] Corriger signup/choose-plan/page.tsx (prix et descriptions)
+- [x] Corriger login/page.tsx (required fields, divider)
+- [x] Corriger dashboard/profile/page.tsx (sous-titre)
+- [x] Corriger Footer.tsx (liens et copyright)
+- [x] Corriger FourDimensions.tsx (texte banner)
+- [x] Corriger wellness/results/page.tsx (Overall Score)
+- [x] Corriger Input.tsx et Select.tsx (helper text darkMode)
+- [x] Corriger admin/assessments/page.tsx (question count)
 - [ ] Pousser sur GitHub

@@ -76,7 +76,7 @@ const getLabelClasses = (darkMode?: boolean) =>
 const getHelperClasses = (darkMode?: boolean) =>
   cn(
     'text-sm',
-    darkMode ? 'text-white/70' : 'text-neutral-500'
+    darkMode ? 'text-white' : 'text-neutral-500'
   );
 
 // =============================================================================
@@ -319,7 +319,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, descripti
             </label>
           )}
           {description && (
-            <span className={cn('text-sm', darkMode ? 'text-white/70' : 'text-neutral-500')}>
+            <span className={cn('text-sm', darkMode ? 'text-white' : 'text-neutral-500')}>
               {description}
             </span>
           )}

@@ -58,7 +58,7 @@ export default function SignupStep1() {
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
           Who are you?
         </h1>
-        <p className="text-white/70">
+        <p className="text-white">
           Select the option that best describes your situation
         </p>
       </div>
@@ -79,7 +79,7 @@ export default function SignupStep1() {
               {type.icon}
             </div>
             <h3 className="font-semibold text-lg mb-2">{type.title}</h3>
-            <p className={`text-sm ${selectedType === type.id ? 'text-primary-500/70' : 'text-white/60'}`}>
+            <p className={`text-sm ${selectedType === type.id ? 'text-primary-600' : 'text-white/90'}`}>
               {type.description}
             </p>
           </Card>
