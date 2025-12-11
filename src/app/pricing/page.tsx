@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Check, Loader2 } from 'lucide-react';
-
+import { Check } from 'lucide-react';
+import { Button, Card, Badge } from '@/components/ui';
 
 const plans = [
   {
@@ -66,7 +66,6 @@ export default function PricingPage() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const handleSubscribe = async (planId: string) => {
-    // For Business plan, redirect to contact
     if (planId === 'business') {
       router.push('/about#contact');
       return;
@@ -75,7 +74,6 @@ export default function PricingPage() {
     setLoadingPlan(planId);
 
     try {
-      // Get user data from localStorage if available
       const storedUser = localStorage.getItem('arise_user');
       let userId = null;
       let userEmail = null;
@@ -86,7 +84,6 @@ export default function PricingPage() {
         userEmail = userData.email;
       }
 
-      // Create checkout session
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: {
@@ -108,7 +105,6 @@ export default function PricingPage() {
         return;
       }
 
-      // Redirect to Stripe Checkout
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -142,19 +138,18 @@ export default function PricingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
             {plans.map((plan) => (
-              <div
+              <Card
                 key={plan.name}
-                className={`relative rounded-2xl p-8 ${
+                variant={plan.popular ? 'gradient' : 'bordered'}
+                className={`relative p-8 ${
                   plan.popular
                     ? 'bg-[#0D5C5C] text-white ring-4 ring-[#D4A84B]'
-                    : 'bg-white border-2 border-gray-200'
+                    : ''
                 }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="bg-[#D4A84B] text-white text-sm font-semibold px-4 py-1 rounded-full">
-                      Most Popular
-                    </span>
+                    <Badge variant="warning" size="md">Most Popular</Badge>
                   </div>
                 )}
 
@@ -187,25 +182,15 @@ export default function PricingPage() {
                   ))}
                 </ul>
 
-                <button
+                <Button
+                  variant={plan.popular ? 'secondary' : 'primary'}
+                  fullWidth
+                  isLoading={loadingPlan === plan.id}
                   onClick={() => handleSubscribe(plan.id)}
-                  disabled={loadingPlan === plan.id}
-                  className={`block w-full text-center py-3 px-6 rounded-lg font-semibold transition-colors disabled:opacity-70 disabled:cursor-not-allowed ${
-                    plan.popular
-                      ? 'bg-[#D4A84B] hover:bg-[#C49A3D] text-white'
-                      : 'bg-[#0D5C5C] hover:bg-[#0a4a4a] text-white'
-                  }`}
                 >
-                  {loadingPlan === plan.id ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
-                    </span>
-                  ) : (
-                    plan.cta
-                  )}
-                </button>
-              </div>
+                  {plan.cta}
+                </Button>
+              </Card>
             ))}
           </div>
         </div>
@@ -223,13 +208,14 @@ export default function PricingPage() {
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span>14-day money-back guarantee</span>
+              <span>Cancel anytime</span>
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
               </svg>
-              <span>Cancel anytime</span>
+              <span>24/7 email support</span>
             </div>
           </div>
         </div>
@@ -239,27 +225,31 @@ export default function PricingPage() {
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
             Frequently Asked Questions
           </h2>
-          
           <div className="space-y-6">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Can I switch plans later?</h3>
-              <p className="text-gray-600">Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.</p>
-            </div>
-            
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Is there a free trial?</h3>
-              <p className="text-gray-600">Yes, all plans come with a 14-day free trial. No credit card required to start exploring the platform.</p>
-            </div>
-            
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">What payment methods do you accept?</h3>
-              <p className="text-gray-600">We accept all major credit cards (Visa, Mastercard, American Express) through our secure Stripe payment system.</p>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">What happens after I subscribe?</h3>
-              <p className="text-gray-600">After subscribing, you'll have immediate access to all features included in your plan. You can start taking assessments and building your leadership profile right away.</p>
-            </div>
+            <Card>
+              <div className="p-6">
+                <h3 className="font-semibold text-gray-900 mb-2">Can I switch plans later?</h3>
+                <p className="text-gray-600">
+                  Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.
+                </p>
+              </div>
+            </Card>
+            <Card>
+              <div className="p-6">
+                <h3 className="font-semibold text-gray-900 mb-2">What payment methods do you accept?</h3>
+                <p className="text-gray-600">
+                  We accept all major credit cards (Visa, Mastercard, American Express) through our secure Stripe payment system.
+                </p>
+              </div>
+            </Card>
+            <Card>
+              <div className="p-6">
+                <h3 className="font-semibold text-gray-900 mb-2">Is there a free trial?</h3>
+                <p className="text-gray-600">
+                  We offer a 14-day money-back guarantee. If you&apos;re not satisfied, contact us for a full refund.
+                </p>
+              </div>
+            </Card>
           </div>
         </div>
       </main>
