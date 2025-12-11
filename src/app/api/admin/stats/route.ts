@@ -1,10 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAdmin, forbiddenResponse } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Verify admin authentication
+    const adminUser = await requireAdmin(request);
+    
+    if (!adminUser) {
+      return forbiddenResponse('Admin access required');
+    }
+
     // Get all users
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },

@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = 'clement@clementroy.work';
+  const adminEmail = process.env.ADMIN_EMAIL || 'clement@clementroy.work';
   
   // Check if user exists
   const existingUser = await prisma.user.findUnique({
@@ -23,8 +24,18 @@ async function main() {
       console.log(`ℹ️ User ${adminEmail} is already an admin`);
     }
   } else {
-    // Create new admin user
-    const hashedPassword = await bcrypt.hash('Admin123!', 10);
+    // Use environment variable for password, or generate a secure random one
+    let adminPassword = process.env.ADMIN_PASSWORD;
+    let passwordGenerated = false;
+    
+    if (!adminPassword) {
+      // Generate a secure random password
+      adminPassword = crypto.randomBytes(16).toString('base64').slice(0, 20) + '!A1';
+      passwordGenerated = true;
+    }
+    
+    const hashedPassword = await bcrypt.hash(adminPassword, 12); // Use stronger hash rounds
+    
     await prisma.user.create({
       data: {
         email: adminEmail,
@@ -36,9 +47,17 @@ async function main() {
         emailVerified: true
       }
     });
+    
     console.log(`✅ Admin user created: ${adminEmail}`);
     console.log(`📧 Email: ${adminEmail}`);
-    console.log(`🔑 Password: Admin123!`);
+    
+    if (passwordGenerated) {
+      console.log(`🔑 Generated Password: ${adminPassword}`);
+      console.log(`⚠️  IMPORTANT: Save this password now! It won't be shown again.`);
+      console.log(`⚠️  Consider setting ADMIN_PASSWORD environment variable for consistent deployments.`);
+    } else {
+      console.log(`🔑 Password: (from ADMIN_PASSWORD environment variable)`);
+    }
   }
 }
 

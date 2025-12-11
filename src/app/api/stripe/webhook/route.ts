@@ -17,13 +17,33 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const signature = request.headers.get('stripe-signature');
 
-    let event: Stripe.Event;
-
     const stripe = getStripe();
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    // Verify webhook signature if secret is configured
-    if (webhookSecret && signature) {
+    // SECURITY: Require webhook signature verification in production
+    if (!webhookSecret) {
+      console.error('STRIPE_WEBHOOK_SECRET is not configured');
+      // In production, reject requests without webhook secret
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          { error: 'Webhook not configured' },
+          { status: 500 }
+        );
+      }
+    }
+
+    if (!signature) {
+      console.error('Missing stripe-signature header');
+      return NextResponse.json(
+        { error: 'Missing signature' },
+        { status: 400 }
+      );
+    }
+
+    let event: Stripe.Event;
+
+    // Verify webhook signature
+    if (webhookSecret) {
       try {
         event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
       } catch (err) {
@@ -34,7 +54,13 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      // For development without webhook secret
+      // Only allow in development mode
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          { error: 'Webhook secret required in production' },
+          { status: 500 }
+        );
+      }
       event = JSON.parse(body) as Stripe.Event;
     }
 
@@ -46,9 +72,23 @@ export async function POST(request: NextRequest) {
         const planId = session.metadata?.planId;
 
         if (userId && planId) {
+          // Validate userId is a number
+          const userIdNum = parseInt(userId);
+          if (isNaN(userIdNum)) {
+            console.error('Invalid userId in webhook metadata:', userId);
+            break;
+          }
+
+          // Validate planId
+          const validPlans = ['starter', 'individual', 'coach', 'business'];
+          if (!validPlans.includes(planId)) {
+            console.error('Invalid planId in webhook metadata:', planId);
+            break;
+          }
+
           // Update user's plan in database
           await prisma.user.update({
-            where: { id: parseInt(userId) },
+            where: { id: userIdNum },
             data: {
               plan: planId as PlanType,
               stripeCustomerId: session.customer as string,
@@ -65,13 +105,19 @@ export async function POST(request: NextRequest) {
         const userId = subscription.metadata?.userId;
         
         if (userId) {
+          const userIdNum = parseInt(userId);
+          if (isNaN(userIdNum)) {
+            console.error('Invalid userId in subscription metadata:', userId);
+            break;
+          }
+
           const status = subscription.status;
           if (status === 'active') {
             console.log(`Subscription for user ${userId} is active`);
           } else if (status === 'canceled' || status === 'unpaid') {
             // Downgrade user to free plan
             await prisma.user.update({
-              where: { id: parseInt(userId) },
+              where: { id: userIdNum },
               data: { plan: 'starter' as PlanType },
             });
             console.log(`User ${userId} downgraded to free plan`);
@@ -85,9 +131,15 @@ export async function POST(request: NextRequest) {
         const userId = subscription.metadata?.userId;
         
         if (userId) {
+          const userIdNum = parseInt(userId);
+          if (isNaN(userIdNum)) {
+            console.error('Invalid userId in subscription metadata:', userId);
+            break;
+          }
+
           // Downgrade user to free plan
           await prisma.user.update({
-            where: { id: parseInt(userId) },
+            where: { id: userIdNum },
             data: {
               plan: 'starter' as PlanType,
               stripeSubscriptionId: null,

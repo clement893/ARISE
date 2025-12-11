@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAdmin, forbiddenResponse, unauthorizedResponse } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
 export async function PUT(request: NextRequest) {
   try {
+    // Verify admin authentication
+    const adminUser = await requireAdmin(request);
+    
+    if (!adminUser) {
+      return forbiddenResponse('Admin access required');
+    }
+
     const { userId, action } = await request.json();
 
     if (!userId || !action) {
       return NextResponse.json(
         { error: 'Missing userId or action' },
+        { status: 400 }
+      );
+    }
+
+    // Prevent admin from modifying their own role
+    if (userId === adminUser.id && (action === 'make_participant' || action === 'delete')) {
+      return NextResponse.json(
+        { error: 'Cannot modify your own admin account' },
         { status: 400 }
       );
     }

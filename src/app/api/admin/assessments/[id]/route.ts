@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAdmin, forbiddenResponse } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,23 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verify admin authentication
+    const adminUser = await requireAdmin(request);
+    
+    if (!adminUser) {
+      return forbiddenResponse('Admin access required');
+    }
+
     const { id } = await params;
+    
+    // Validate assessment type
+    const validTypes = ['tki', '360', 'wellness', 'mbti'];
+    if (!validTypes.includes(id)) {
+      return NextResponse.json(
+        { error: 'Invalid assessment type' },
+        { status: 400 }
+      );
+    }
     
     // Get assessment config from database or return default
     const config = await prisma.assessmentConfig.findUnique({
@@ -43,27 +60,58 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verify admin authentication
+    const adminUser = await requireAdmin(request);
+    
+    if (!adminUser) {
+      return forbiddenResponse('Admin access required');
+    }
+
     const { id } = await params;
     const body = await request.json();
     const { name, description, duration, questionCount, isActive } = body;
+
+    // Validate assessment type
+    const validTypes = ['tki', '360', 'wellness', 'mbti'];
+    if (!validTypes.includes(id)) {
+      return NextResponse.json(
+        { error: 'Invalid assessment type' },
+        { status: 400 }
+      );
+    }
+
+    // Validate input
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Assessment name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof duration !== 'number' || duration < 1 || duration > 120) {
+      return NextResponse.json(
+        { error: 'Duration must be between 1 and 120 minutes' },
+        { status: 400 }
+      );
+    }
 
     // Upsert assessment config
     const config = await prisma.assessmentConfig.upsert({
       where: { assessmentType: id },
       update: {
-        name,
-        description,
+        name: name.trim(),
+        description: description?.trim() || '',
         duration,
-        questionCount,
-        isActive
+        questionCount: questionCount || 0,
+        isActive: Boolean(isActive)
       },
       create: {
         assessmentType: id,
-        name,
-        description,
+        name: name.trim(),
+        description: description?.trim() || '',
         duration,
-        questionCount,
-        isActive
+        questionCount: questionCount || 0,
+        isActive: Boolean(isActive)
       }
     });
 

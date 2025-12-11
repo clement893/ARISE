@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAdmin, forbiddenResponse } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verify admin authentication
+    const adminUser = await requireAdmin(request);
+    
+    if (!adminUser) {
+      return forbiddenResponse('Admin access required');
+    }
+
     const { id } = await params;
     
     const questions = await prisma.assessmentQuestion.findMany({
@@ -30,14 +38,36 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verify admin authentication
+    const adminUser = await requireAdmin(request);
+    
+    if (!adminUser) {
+      return forbiddenResponse('Admin access required');
+    }
+
     const { id } = await params;
     const body = await request.json();
     const { text, category, order } = body;
 
+    // Validate input
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Question text is required' },
+        { status: 400 }
+      );
+    }
+
+    if (text.length > 1000) {
+      return NextResponse.json(
+        { error: 'Question text is too long (max 1000 characters)' },
+        { status: 400 }
+      );
+    }
+
     const question = await prisma.assessmentQuestion.create({
       data: {
         assessmentType: id,
-        text,
+        text: text.trim(),
         category: category || '',
         order: order || 0
       }
