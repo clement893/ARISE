@@ -60,7 +60,7 @@ const badgeVariants = cva(
   }
 );
 
-export interface BadgeProps
+interface BadgeProps
   extends HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {
   children: ReactNode;
@@ -176,5 +176,5 @@ const RoleBadge = ({ role }: RoleBadgeProps) => {
 };
 
 export { Badge, BadgeGroup, StatusBadge, RoleBadge, badgeVariants };
+export type { BadgeProps, StatusBadgeProps, RoleBadgeProps };
 export default Badge;
-export type { BadgeProps };
