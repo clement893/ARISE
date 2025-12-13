@@ -360,7 +360,8 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
       }
       return false;
     }
-    return pathname === itemHref || (pathname?.startsWith(itemHref + '/') ?? false);
+    if (!pathname) return false;
+    return pathname === itemHref || pathname.startsWith(itemHref + '/');
   };
 
   // Close mobile menu when route changes
