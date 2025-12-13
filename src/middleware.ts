@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractTokenFromHeader, verifyAccessToken } from './lib/jwt';
+import { extractTokenFromHeader } from './lib/jwt';
+import { jwtVerify } from 'jose';
 
 /**
  * Middleware to protect API routes
  * Checks JWT token in Authorization header
+ * Uses jose library for Edge Runtime compatibility
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip middleware for public routes
@@ -27,7 +29,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Extract and verify token
+  // Extract token from Authorization header
   const authHeader = request.headers.get('authorization');
   const token = extractTokenFromHeader(authHeader);
 
@@ -39,28 +41,52 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  const payload = verifyAccessToken(token);
-  if (!payload) {
+  // Verify token using jose (Edge Runtime compatible)
+  try {
+    const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret-in-production';
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    
+    const { payload } = await jwtVerify(token, secret, {
+      issuer: 'arise-app',
+      audience: 'arise-users',
+    });
+
+    // Extract user info from payload (jose returns payload as JWTPayload)
+    const userId = (payload as any).userId;
+    const email = (payload as any).email;
+    const role = (payload as any).role;
+
+    if (!userId || !email || !role) {
+      console.log('Middleware: Token payload missing required fields');
+      return NextResponse.json(
+        { error: 'Invalid token payload', code: 'AUTHENTICATION_ERROR' },
+        { status: 401 }
+      );
+    }
+
+    // Add user info to headers for use in route handlers
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', userId.toString());
+    requestHeaders.set('x-user-email', email);
+    requestHeaders.set('x-user-role', role);
+
+    console.log('Middleware: Token verified successfully for user:', userId);
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  } catch (error) {
     console.log('Middleware: Token verification failed for path:', pathname);
+    if (error instanceof Error) {
+      console.log('Error details:', error.message);
+    }
     return NextResponse.json(
       { error: 'Invalid or expired token', code: 'AUTHENTICATION_ERROR' },
       { status: 401 }
     );
   }
-
-  console.log('Middleware: Token verified successfully for user:', payload.userId);
-
-  // Add user info to headers for use in route handlers
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-user-id', payload.userId.toString());
-  requestHeaders.set('x-user-email', payload.email);
-  requestHeaders.set('x-user-role', payload.role);
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
 }
 
 /**
