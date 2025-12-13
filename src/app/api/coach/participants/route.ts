@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
           plan: true,
           createdAt: true,
           hasCoach: true,
+          role: true,
           roles: true,
           _count: {
             select: {
