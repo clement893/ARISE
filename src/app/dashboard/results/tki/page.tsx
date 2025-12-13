@@ -160,10 +160,10 @@ export default function TKIDetailedResultsPage() {
     );
   }
 
-  const scores = tkiResult.scores || {};
+  const scores = (tkiResult.scores || {}) as Record<TKIMode, number>;
   const dominantMode = tkiResult.dominantResult as TKIMode;
   const modeEntries = Object.entries(scores) as [TKIMode, number][];
-  const maxScore = Math.max(...Object.values(scores));
+  const maxScore = Math.max(...Object.values(scores).map(v => typeof v === 'number' ? v : 0));
   const sortedModes = modeEntries.sort((a, b) => b[1] - a[1]);
 
   return (
