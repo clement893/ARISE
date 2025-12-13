@@ -334,64 +334,6 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
       </aside>
     </>
   );
-      {/* Logo */}
-      <div className="p-6 flex justify-center">
-        <Link href="/" aria-label="Go to homepage">
-          <Logo />
-        </Link>
-      </div>
-
-      {/* User Profile Section */}
-      <UserProfile 
-        displayName={displayName}
-        fullName={fullName}
-        plan={user.plan}
-        isAdmin={userIsAdmin}
-      />
-
-      {/* Navigation Items */}
-      <nav className="flex-1 px-3" aria-label="Dashboard navigation">
-        <ul className="space-y-1" role="list">
-          {DASHBOARD_NAV_ITEMS.map((item) => (
-            <li key={item.href}>
-              <NavLink
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                isActive={isItemActive(item.href)}
-              />
-            </li>
-          ))}
-          
-          {/* Admin Link - Only visible for admin users */}
-          {userIsAdmin && (
-            <li className="mt-4 pt-4 border-t border-white/20">
-              <NavLink
-                href="/admin"
-                icon={Shield}
-                label="Admin Panel"
-                isActive={false}
-                variant="admin"
-              />
-            </li>
-          )}
-        </ul>
-      </nav>
-
-      {/* Logout Button */}
-      <div className="p-4">
-        <Button
-          variant="secondary"
-          onClick={onLogout}
-          leftIcon={<LogOut className="w-5 h-5" />}
-          fullWidth
-          aria-label="Log out of your account"
-        >
-          Logout
-        </Button>
-      </div>
-    </aside>
-  );
 }
 
 // Export types for external use
