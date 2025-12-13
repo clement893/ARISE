@@ -69,9 +69,14 @@ export default function WellnessTestPage() {
               text: q.text,
             }));
           setWellnessQuestions(questions);
+        } else {
+          console.error('Failed to load questions:', response.status);
         }
       } catch (error) {
         console.error('Failed to load questions:', error);
+      } finally {
+        // Always set loading to false after attempting to load questions
+        setIsLoading(false);
       }
     };
     loadQuestions();
@@ -88,8 +93,11 @@ export default function WellnessTestPage() {
     setUser(parsedUser);
     if (wellnessQuestions.length > 0) {
       checkExistingProgress(parsedUser.id);
+    } else if (!isLoading) {
+      // If questions are loaded but empty, still set loading to false
+      setIsLoading(false);
     }
-  }, [router, wellnessQuestions.length]);
+  }, [router, wellnessQuestions.length, isLoading]);
 
   // Check if user has existing progress for this assessment
   const checkExistingProgress = async (userId: number) => {

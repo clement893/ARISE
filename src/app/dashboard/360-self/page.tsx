@@ -68,9 +68,14 @@ export default function SelfAssessment360Page() {
               text: q.text,
             }));
           setSelfAssessmentQuestions(questions);
+        } else {
+          console.error('Failed to load questions:', response.status);
         }
       } catch (error) {
         console.error('Failed to load questions:', error);
+      } finally {
+        // Always set loading to false after attempting to load questions
+        setIsLoading(false);
       }
     };
     loadQuestions();
@@ -87,8 +92,11 @@ export default function SelfAssessment360Page() {
     setUser(parsedUser);
     if (selfAssessmentQuestions.length > 0) {
       checkExistingProgress(parsedUser.id);
+    } else if (!isLoading) {
+      // If questions are loaded but empty, still set loading to false
+      setIsLoading(false);
     }
-  }, [router, selfAssessmentQuestions.length]);
+  }, [router, selfAssessmentQuestions.length, isLoading]);
 
   // Check if user has existing progress for this assessment
   const checkExistingProgress = async (userId: number) => {

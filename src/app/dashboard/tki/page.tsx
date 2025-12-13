@@ -105,6 +105,9 @@ export default function TKITestPage() {
         setUser(userData);
         if (tkiQuestions.length > 0) {
           checkExistingProgress(userData.id);
+        } else if (!loading) {
+          // If questions are loaded but empty, still set loading to false
+          setLoading(false);
         }
       } catch {
         router.push('/signup');
@@ -112,7 +115,7 @@ export default function TKITestPage() {
     } else {
       router.push('/signup');
     }
-  }, [router, tkiQuestions.length]);
+  }, [router, tkiQuestions.length, loading]);
 
   // Check if user has existing progress for this assessment
   const checkExistingProgress = async (userId: number) => {
