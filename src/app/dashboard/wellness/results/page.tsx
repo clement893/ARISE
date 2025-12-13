@@ -1,19 +1,8 @@
 'use client';
 
-import { Button, Card, CardContent, Badge, Spinner, LoadingPage } from '@/components/ui';
-
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Download, Share2 } from 'lucide-react';
-
-interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  plan: string;
-}
 
 const categories = [
   { id: 'physical', name: 'Physical', color: 'var(--color-primary-500)', description: 'Body health and vitality' },
@@ -30,19 +19,9 @@ const questionCategories: Record<number, string> = {
 };
 
 export default function WellnessResultsPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const userData = localStorage.getItem('arise_user');
-    if (!userData) {
-      router.push('/login');
-      return;
-    }
-    setUser(JSON.parse(userData));
-
     // Load results
     const savedResults = localStorage.getItem('arise_wellness_results');
     if (savedResults) {
@@ -76,17 +55,7 @@ export default function WellnessResultsPage() {
 
       setResults(percentages);
     }
-
-    setIsLoading(false);
-  }, [router]);
-
-  if (isLoading || !user) {
-    return (
-      <div className="min-h-screen bg-primary-500 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-secondary-500"></div>
-      </div>
-    );
-  }
+  }, []);
 
   const overallScore = Object.values(results).length > 0
     ? Math.round(Object.values(results).reduce((a, b) => a + b, 0) / Object.values(results).length)
@@ -107,12 +76,8 @@ export default function WellnessResultsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-primary-500">
-      <div className="flex">
-        <Sidebar user={user} activePage="results" onLogout={handleLogout} />
-        
-        <main className="flex-1 p-6">
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+    <main className="p-4 sm:p-6 lg:p-8">
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-4xl mx-auto">
             {/* Header */}
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -243,8 +208,6 @@ export default function WellnessResultsPage() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </main>
   );
 }
