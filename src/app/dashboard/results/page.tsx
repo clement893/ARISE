@@ -382,7 +382,7 @@ export default function ResultsPage() {
                   <AlertCircle className="w-10 h-10 text-gray-300 mb-2" />
                   <p className="text-gray-500 text-sm">Complete the MBTI assessment to see your results</p>
                   <button 
-                    onClick={() => router.push('/dashboard/assessments')}
+                    onClick={() => window.open('https://www.16personalities.com/', '_blank')}
                     className="mt-2 text-primary-500 text-sm font-medium hover:underline"
                   >
                     Take MBTI assessment →
@@ -440,7 +440,10 @@ export default function ResultsPage() {
                       </div>
                     )}
                   </div>
-                  <button className="mt-4 text-primary-500 text-sm font-medium hover:underline flex items-center gap-1">
+                  <button 
+                    onClick={() => router.push('/dashboard/development')}
+                    className="mt-4 text-primary-500 text-sm font-medium hover:underline flex items-center gap-1"
+                  >
                     View all cards <ChevronRight className="w-4 h-4" />
                   </button>
                 </>
