@@ -80,9 +80,12 @@ export default function SelfAssessment360Page() {
   // Load questions from database and user
   useEffect(() => {
     const loadData = async () => {
+      console.log('360-self: Starting to load data...');
+      
       // Load user first
       const userData = localStorage.getItem('arise_user');
       if (!userData) {
+        console.log('360-self: No user data, redirecting to login');
         router.push('/login');
         return;
       }
@@ -90,32 +93,41 @@ export default function SelfAssessment360Page() {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        console.log('360-self: User loaded:', parsedUser.id);
         
         // Load questions
+        console.log('360-self: Fetching questions from API...');
         const response = await fetch('/api/assessments/360-self/questions');
+        console.log('360-self: API response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
-          const questions: SelfAssessmentQuestion[] = data.questions
+          console.log('360-self: Questions data received:', data);
+          const questions: SelfAssessmentQuestion[] = (data.questions || [])
             .sort((a: any, b: any) => a.order - b.order)
             .map((q: any, index: number) => ({
               id: index + 1,
               category: q.category || '',
               text: q.text,
             }));
+          console.log('360-self: Parsed questions:', questions.length);
           setSelfAssessmentQuestions(questions);
           
           // Check for existing progress if questions loaded
           if (questions.length > 0) {
+            console.log('360-self: Questions loaded, checking progress...');
             await checkExistingProgress(parsedUser.id);
           } else {
+            console.log('360-self: No questions found, setting loading to false');
             setIsLoading(false);
           }
         } else {
-          console.error('Failed to load questions:', response.status);
+          const errorText = await response.text();
+          console.error('360-self: Failed to load questions:', response.status, errorText);
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('360-self: Failed to load data:', error);
         setIsLoading(false);
       }
     };

@@ -66,11 +66,15 @@ export default function TKITestPage() {
   // Load questions from database
   useEffect(() => {
     const loadQuestions = async () => {
+      console.log('TKI: Starting to load questions...');
       try {
         const response = await fetch('/api/assessments/tki/questions');
+        console.log('TKI: API response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
-          const questions: TKIQuestion[] = data.questions
+          console.log('TKI: Questions data received:', data);
+          const questions: TKIQuestion[] = (data.questions || [])
             .sort((a: any, b: any) => a.order - b.order)
             .map((q: any) => {
               try {
@@ -82,15 +86,20 @@ export default function TKITestPage() {
                   mode_a: parsed.mode_a,
                   mode_b: parsed.mode_b,
                 };
-              } catch {
+              } catch (e) {
+                console.error('TKI: Failed to parse question:', q, e);
                 return null;
               }
             })
             .filter((q: TKIQuestion | null) => q !== null) as TKIQuestion[];
+          console.log('TKI: Parsed questions:', questions.length);
           setTkiQuestions(questions);
+        } else {
+          const errorText = await response.text();
+          console.error('TKI: Failed to load questions:', response.status, errorText);
         }
       } catch (error) {
-        console.error('Failed to load questions:', error);
+        console.error('TKI: Failed to load questions:', error);
       }
     };
     loadQuestions();
@@ -98,16 +107,18 @@ export default function TKITestPage() {
 
   // Load user and check for existing progress
   useEffect(() => {
+    console.log('TKI: Loading user, questions length:', tkiQuestions.length, 'loading:', loading);
     const storedUser = localStorage.getItem('arise_user');
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
         if (tkiQuestions.length > 0) {
+          console.log('TKI: Questions available, checking progress...');
           checkExistingProgress(userData.id);
-        } else if (!loading) {
-          // If questions are loaded but empty, still set loading to false
-          setLoading(false);
+        } else {
+          console.log('TKI: No questions yet, waiting...');
+          // Don't set loading to false here, wait for questions to load
         }
       } catch {
         router.push('/signup');
@@ -115,10 +126,11 @@ export default function TKITestPage() {
     } else {
       router.push('/signup');
     }
-  }, [router, tkiQuestions.length, loading]);
+  }, [router, tkiQuestions.length]);
 
   // Check if user has existing progress for this assessment
   const checkExistingProgress = async (userId: number) => {
+    console.log('TKI: Checking existing progress for user:', userId);
     try {
       const accessToken = localStorage.getItem('arise_access_token');
       const response = await fetch('/api/assessments/progress?type=tki', {
@@ -128,6 +140,7 @@ export default function TKITestPage() {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log('TKI: Progress data:', data);
         if (data.progress) {
           setHasProgress(true);
           setCurrentQuestion(data.progress.currentQuestion || 0);
@@ -135,8 +148,9 @@ export default function TKITestPage() {
         }
       }
     } catch (error) {
-      console.error('Failed to check progress:', error);
+      console.error('TKI: Failed to check progress:', error);
     } finally {
+      console.log('TKI: Setting loading to false');
       setLoading(false);
     }
   };

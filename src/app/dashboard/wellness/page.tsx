@@ -81,9 +81,12 @@ export default function WellnessTestPage() {
   // Load questions from database and user
   useEffect(() => {
     const loadData = async () => {
+      console.log('Wellness: Starting to load data...');
+      
       // Load user first
       const userData = localStorage.getItem('arise_user');
       if (!userData) {
+        console.log('Wellness: No user data, redirecting to login');
         router.push('/login');
         return;
       }
@@ -91,32 +94,41 @@ export default function WellnessTestPage() {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        console.log('Wellness: User loaded:', parsedUser.id);
         
         // Load questions
+        console.log('Wellness: Fetching questions from API...');
         const response = await fetch('/api/assessments/wellness/questions');
+        console.log('Wellness: API response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
-          const questions: WellnessQuestion[] = data.questions
+          console.log('Wellness: Questions data received:', data);
+          const questions: WellnessQuestion[] = (data.questions || [])
             .sort((a: any, b: any) => a.order - b.order)
             .map((q: any, index: number) => ({
               id: index + 1,
               category: q.category || '',
               text: q.text,
             }));
+          console.log('Wellness: Parsed questions:', questions.length);
           setWellnessQuestions(questions);
           
           // Check for existing progress if questions loaded
           if (questions.length > 0) {
+            console.log('Wellness: Questions loaded, checking progress...');
             await checkExistingProgress(parsedUser.id);
           } else {
+            console.log('Wellness: No questions found, setting loading to false');
             setIsLoading(false);
           }
         } else {
-          console.error('Failed to load questions:', response.status);
+          const errorText = await response.text();
+          console.error('Wellness: Failed to load questions:', response.status, errorText);
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('Wellness: Failed to load data:', error);
         setIsLoading(false);
       }
     };
