@@ -79,11 +79,15 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const response = await fetch('/api/admin/stats');
+      const { authenticatedFetch } = await import('@/lib/token-refresh');
+      const response = await authenticatedFetch('/api/admin/stats');
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
         setUsers(data.users);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error loading admin data:', errorData);
       }
     } catch (error) {
       console.error('Error loading admin data:', error);
@@ -136,14 +140,17 @@ export default function AdminDashboard() {
     setActionMenuOpen(null);
     
     try {
-      const response = await fetch('/api/admin/users', {
+      const { authenticatedFetch } = await import('@/lib/token-refresh');
+      const response = await authenticatedFetch('/api/admin/users', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, action }),
       });
       
       if (response.ok) {
         loadData();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error performing action:', errorData);
       }
     } catch (error) {
       console.error('Error performing action:', error);
