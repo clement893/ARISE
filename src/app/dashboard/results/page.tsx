@@ -37,6 +37,8 @@ export default function ResultsPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Assessment data received:', data);
+        console.log('TKI data:', data.summary?.tki);
+        console.log('TKI dominantResult:', data.summary?.tki?.dominantResult);
         setAssessmentResults(data.summary || null);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
