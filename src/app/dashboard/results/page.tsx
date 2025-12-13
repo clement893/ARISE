@@ -39,6 +39,7 @@ export default function ResultsPage() {
         console.log('Assessment data received:', data);
         console.log('TKI data:', data.summary?.tki);
         console.log('TKI dominantResult:', data.summary?.tki?.dominantResult);
+        console.log('Full summary:', JSON.stringify(data.summary, null, 2));
         setAssessmentResults(data.summary || null);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -49,7 +50,7 @@ export default function ResultsPage() {
       console.error('Failed to fetch assessments:', error);
       setAssessmentResults(null);
     }
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
     let isMounted = true;
@@ -132,16 +133,22 @@ export default function ResultsPage() {
   const hasMBTI = assessmentResults?.mbti?.dominantResult;
   // Check if TKI exists - use dominantResult if available, otherwise check if data exists
   const tkiDominantResult = tkiData?.dominantResult;
-  const hasTKI = tkiDominantResult || (tkiData && (tkiData.scores || tkiData.answers) ? true : false);
+  const hasTKI = !!tkiDominantResult || !!(tkiData && (tkiData.scores || tkiData.answers));
   const has360 = assessmentResults?.self_360?.dominantResult;
   const hasWellness = assessmentResults?.wellness?.overallScore !== undefined;
   const hasAnyAssessment = hasMBTI || hasTKI || has360 || hasWellness;
 
-  // Debug logging
-  console.log('Results page - assessmentResults:', assessmentResults);
-  console.log('Results page - tkiData:', tkiData);
-  console.log('Results page - tkiDominantResult:', tkiDominantResult);
-  console.log('Results page - hasTKI:', hasTKI);
+  // Debug logging - log every render to see if data changes
+  console.log('Results page render - assessmentResults:', assessmentResults);
+  console.log('Results page render - tkiData:', tkiData);
+  console.log('Results page render - tkiDominantResult:', tkiDominantResult);
+  console.log('Results page render - hasTKI:', hasTKI);
+  console.log('Results page render - leaderProfile will be:', {
+    MBTI: hasMBTI ? String(hasMBTI) : 'Not completed',
+    TKI: tkiDominantResult ? String(tkiDominantResult) : (hasTKI ? 'Completed' : 'Not completed'),
+    '360°': has360 ? String(has360) : 'Not completed',
+    Wellness: hasWellness ? `${assessmentResults.wellness.overallScore}%` : 'Not completed',
+  });
 
   // Dynamic leader profile based on assessment results
   // Display dominantResult if available, otherwise show "Not completed"
