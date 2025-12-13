@@ -7,6 +7,7 @@
     "build": "npx prisma generate && next build",
     "start": "npx prisma db push && node scripts/seed-admin.mjs && node scripts/seed-questions.mjs && next start",
     "seed:admin": "node scripts/seed-admin.mjs",
+    "restore:admin": "node scripts/restore-admin.mjs",
     "seed:questions": "node scripts/seed-questions.mjs",
     "seed:products": "node scripts/seed-products.mjs",
     "seed:coach": "node scripts/seed-coach.mjs",
