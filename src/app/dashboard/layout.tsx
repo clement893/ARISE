@@ -32,19 +32,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         // Verify and refresh user data from API
         const accessToken = localStorage.getItem('arise_access_token');
-        if (accessToken) {
+        if (accessToken && storedUser) {
           try {
             const { authenticatedFetch } = await import('@/lib/token-refresh');
             const response = await authenticatedFetch('/api/user/profile');
             if (response.ok) {
               const data = await response.json();
+              const parsedStoredUser = JSON.parse(storedUser);
               const updatedUser = {
                 ...data.user,
-                // Preserve role from localStorage if API doesn't return it
-                role: data.user.role || JSON.parse(storedUser || '{}').role,
+                // Always preserve role from localStorage to maintain admin access
+                role: parsedStoredUser.role || data.user.role,
               };
               setUser(updatedUser);
-              // Update localStorage with fresh data
+              // Update localStorage with fresh data but preserve role
               localStorage.setItem('arise_user', JSON.stringify(updatedUser));
             }
           } catch (error) {
