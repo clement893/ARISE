@@ -198,6 +198,8 @@ export default function TKITestPage() {
 
       try {
         const accessToken = localStorage.getItem('arise_access_token');
+        console.log('Saving TKI assessment - Token present:', !!accessToken, 'Dominant:', dominant, 'Overall score:', overallScore);
+        
         const response = await fetch('/api/assessments', {
           method: 'POST',
           headers: {
@@ -213,14 +215,22 @@ export default function TKITestPage() {
           }),
         });
 
+        console.log('TKI save response status:', response.status);
+
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('Failed to save TKI results:', errorData);
           throw new Error(errorData.error || 'Failed to save assessment');
         }
+
+        const savedData = await response.json();
+        console.log('TKI assessment saved successfully:', savedData);
+        
         // Delete progress since test is completed
         await deleteProgress();
       } catch (error) {
         console.error('Failed to save TKI results:', error);
+        alert('Erreur lors de la sauvegarde des résultats. Veuillez réessayer.');
       }
 
       setCurrentStep('results');

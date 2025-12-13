@@ -43,14 +43,23 @@ export default function ResultsPage() {
   const fetchAssessments = async (userId: number) => {
     try {
       const accessToken = localStorage.getItem('arise_access_token');
+      console.log('Fetching assessments for user:', userId, 'Token present:', !!accessToken);
+      
       const response = await fetch('/api/assessments', {
         headers: {
           ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         },
       });
+      
+      console.log('Assessment fetch response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Assessment data received:', data);
         setAssessmentResults(data.summary);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to fetch assessments:', errorData);
       }
     } catch (error) {
       console.error('Failed to fetch assessments:', error);
@@ -100,6 +109,11 @@ export default function ResultsPage() {
   if (!user) {
     return null;
   }
+
+  // Debug: Log assessment results
+  useEffect(() => {
+    console.log('Assessment results state:', assessmentResults);
+  }, [assessmentResults]);
 
   // Check if user has completed any assessments
   const hasMBTI = assessmentResults?.mbti?.dominantResult;

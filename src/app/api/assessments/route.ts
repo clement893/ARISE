@@ -27,15 +27,16 @@ export async function GET(request: NextRequest) {
 
     // Calculate summary for dashboard
     const summary = {
-      tki: assessments.find(a => a.assessmentType === 'tki'),
-      wellness: assessments.find(a => a.assessmentType === 'wellness'),
-      self_360: assessments.find(a => a.assessmentType === 'self_360'),
-      mbti: assessments.find(a => a.assessmentType === 'mbti'),
+      tki: assessments.find(a => a.assessmentType === 'tki') || null,
+      wellness: assessments.find(a => a.assessmentType === 'wellness') || null,
+      self_360: assessments.find(a => a.assessmentType === 'self_360') || null,
+      mbti: assessments.find(a => a.assessmentType === 'mbti') || null,
       completedCount: assessments.length,
       totalAssessments: 4,
       overallProgress: Math.round((assessments.length / 4) * 100),
     };
 
+    console.log('GET /api/assessments - User:', userId, 'Found assessments:', assessments.length, 'Summary:', summary);
     return NextResponse.json({ assessments, summary });
   } catch (error) {
     console.error('Get assessments error:', error);
@@ -100,6 +101,14 @@ export async function POST(request: NextRequest) {
         dominantResult,
         overallScore,
       },
+    });
+
+    console.log('POST /api/assessments - Saved assessment:', {
+      userId,
+      assessmentType,
+      dominantResult,
+      overallScore,
+      assessmentId: assessment.id,
     });
 
     return NextResponse.json({

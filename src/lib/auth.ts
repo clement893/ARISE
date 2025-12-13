@@ -13,10 +13,36 @@ export interface AuthUser {
 /**
  * Get the current user from JWT token in Authorization header
  * Returns null if not authenticated or token is invalid
+ * Can also use x-user-id header if set by middleware (for performance)
  */
 export async function getCurrentUser(request: NextRequest): Promise<AuthUser | null> {
   try {
-    // Extract token from Authorization header
+    // First check if middleware already set x-user-id (more efficient)
+    const userIdFromHeader = request.headers.get('x-user-id');
+    if (userIdFromHeader) {
+      const userId = parseInt(userIdFromHeader);
+      if (!isNaN(userId)) {
+        // Fetch user from database
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            firstName: true,
+            lastName: true,
+            isActive: true,
+          },
+        });
+
+        // Check if user exists and is active
+        if (user && user.isActive) {
+          return user;
+        }
+      }
+    }
+
+    // Fallback: Extract token from Authorization header
     const authHeader = request.headers.get('authorization');
     const token = extractTokenFromHeader(authHeader);
     
