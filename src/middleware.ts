@@ -15,6 +15,7 @@ export async function middleware(request: NextRequest) {
     '/api/auth/login',
     '/api/auth/signup',
     '/api/auth/refresh',
+    '/api/auth/me', // Auth check endpoint
     '/api/feedback', // Feedback routes use token-based auth
   ];
 
