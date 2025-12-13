@@ -29,6 +29,11 @@ export const RATE_LIMITS = {
     maxRequests: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
   },
+  // Token refresh - more permissive since it's automatic
+  refresh: {
+    maxRequests: 20,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+  },
   // API endpoints - moderate limits
   api: {
     maxRequests: 100,

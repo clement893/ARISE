@@ -8,8 +8,8 @@ import { rateLimitMiddleware, RATE_LIMITS } from '@/lib/rateLimit';
  * Refresh access token using refresh token from cookie
  */
 export async function POST(request: NextRequest) {
-  // Rate limiting
-  const rateLimit = rateLimitMiddleware(request, RATE_LIMITS.auth);
+  // Rate limiting - use refresh limit which is more permissive
+  const rateLimit = rateLimitMiddleware(request, RATE_LIMITS.refresh);
   if (!rateLimit.allowed) {
     return rateLimit.response!;
   }
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         id: true,
         email: true,
         role: true,
+        roles: true,
         firstName: true,
         lastName: true,
         isActive: true,
@@ -58,21 +59,22 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    // Verify role hasn't changed
-    if (user.role !== payload.role) {
-      const response = NextResponse.json(
-        { error: 'Token invalid' },
-        { status: 401 }
-      );
-      response.cookies.delete('refreshToken');
-      return response;
-    }
+    // Parse roles array
+    const currentRoles = user.roles 
+      ? (Array.isArray(user.roles) ? user.roles : JSON.parse(user.roles as string))
+      : [user.role];
 
-    // Generate new access token
+    // Get primary role (admin takes precedence, then first role)
+    const primaryRole = currentRoles.includes('admin') 
+      ? 'admin' 
+      : (currentRoles[0] || user.role) as 'admin' | 'coach' | 'participant';
+
+    // Generate new access token with current roles
     const authUser: AuthUser = {
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: primaryRole,
+      roles: currentRoles,
       firstName: user.firstName,
       lastName: user.lastName,
     };
