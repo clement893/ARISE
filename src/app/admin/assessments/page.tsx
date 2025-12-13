@@ -305,23 +305,56 @@ export default function AdminAssessments() {
           <p className="text-gray-500">Configure questions for all assessments</p>
         </div>
         
-        {/* Save Status Indicator */}
-        {saveStatus !== 'idle' && (
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            saveStatus === 'saving' ? 'bg-blue-100 text-blue-700' :
-            saveStatus === 'saved' ? 'bg-green-100 text-green-700' :
-            'bg-red-100 text-red-700'
-          }`}>
-            {saveStatus === 'saving' && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
-            {saveStatus === 'saved' && <Check className="w-4 h-4" />}
-            {saveStatus === 'error' && <AlertCircle className="w-4 h-4" />}
-            <span className="text-sm font-medium">
-              {saveStatus === 'saving' ? 'Saving...' :
-               saveStatus === 'saved' ? 'Saved!' :
-               'Error saving'}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {/* Migrate Questions Button */}
+          <button
+            onClick={async () => {
+              if (!confirm('This will replace all existing questions with the default questions. Continue?')) return;
+              setSaveStatus('saving');
+              try {
+                const { authenticatedFetch } = await import('@/lib/token-refresh');
+                const response = await authenticatedFetch('/api/admin/migrate-questions', {
+                  method: 'POST',
+                });
+                if (response.ok) {
+                  const data = await response.json();
+                  alert(`Migration successful!\nTKI: ${data.counts.tki} questions\nWellness: ${data.counts.wellness} questions\n360° Self: ${data.counts['360-self']} questions`);
+                  if (selectedAssessment) {
+                    loadQuestions(selectedAssessment.id);
+                  }
+                  setSaveStatus('saved');
+                  setTimeout(() => setSaveStatus('idle'), 2000);
+                } else {
+                  setSaveStatus('error');
+                }
+              } catch (error) {
+                console.error('Migration error:', error);
+                setSaveStatus('error');
+              }
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+          >
+            Migrate Default Questions
+          </button>
+          
+          {/* Save Status Indicator */}
+          {saveStatus !== 'idle' && (
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              saveStatus === 'saving' ? 'bg-blue-100 text-blue-700' :
+              saveStatus === 'saved' ? 'bg-green-100 text-green-700' :
+              'bg-red-100 text-red-700'
+            }`}>
+              {saveStatus === 'saving' && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+              {saveStatus === 'saved' && <Check className="w-4 h-4" />}
+              {saveStatus === 'error' && <AlertCircle className="w-4 h-4" />}
+              <span className="text-sm font-medium">
+                {saveStatus === 'saving' ? 'Saving...' :
+                 saveStatus === 'saved' ? 'Saved!' :
+                 'Error saving'}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-8">
