@@ -12,7 +12,7 @@
  */
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
@@ -118,18 +118,53 @@ const NavLink = ({ href, icon: Icon, label, isActive, variant = 'default', onNav
 /**
  * UserProfile - User info display in sidebar header
  * Shows avatar, name, plan badge, and admin badge if applicable
+ * Allows switching between different spaces (admin, coach, personal)
  */
 interface UserProfileProps {
   displayName: string;
   fullName: string;
   plan?: string;
   isAdmin: boolean;
+  role?: string;
+  onSwitchSpace?: (space: 'admin' | 'coach' | 'personal') => void;
 }
 
-const UserProfile = ({ displayName, fullName, plan, isAdmin }: UserProfileProps) => {
+const UserProfile = ({ displayName, fullName, plan, isAdmin, role, onSwitchSpace }: UserProfileProps) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const currentPath = pathname || '';
+
+  const availableSpaces = [];
+  
+  // Determine available spaces based on user role
+  if (isAdmin) {
+    availableSpaces.push({ id: 'admin', label: 'Admin Panel', href: '/admin/dashboard', icon: Shield });
+  }
+  if (role === 'coach' || isAdmin) {
+    availableSpaces.push({ id: 'coach', label: 'Coach Profile', href: '/dashboard?view=coach', icon: User });
+  }
+  availableSpaces.push({ id: 'personal', label: 'Personal Profile', href: '/dashboard', icon: User });
+
+  const currentSpace = currentPath.startsWith('/admin') ? 'admin' : 
+                       currentPath.includes('coach') ? 'coach' : 'personal';
+
+  const handleSpaceClick = (space: 'admin' | 'coach' | 'personal', href: string) => {
+    setIsMenuOpen(false);
+    if (onSwitchSpace) {
+      onSwitchSpace(space);
+    } else {
+      // Use Next.js router for smooth navigation
+      router.push(href);
+    }
+  };
+
   return (
-    <div className="px-4 mb-6">
-      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-colors">
+    <div className="px-4 mb-6 relative">
+      <div 
+        className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 cursor-pointer transition-colors"
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+      >
         {/* Avatar with initials */}
         <div 
           className="w-10 h-10 rounded-full bg-neutral-300 flex items-center justify-center overflow-hidden"
@@ -141,10 +176,10 @@ const UserProfile = ({ displayName, fullName, plan, isAdmin }: UserProfileProps)
         </div>
         
         {/* User info */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
-            <span className="text-white text-sm font-medium">{fullName}</span>
-            <ChevronDown className="w-4 h-4 text-white/70" aria-hidden="true" />
+            <span className="text-white text-sm font-medium truncate">{fullName}</span>
+            <ChevronDown className={`w-4 h-4 text-white/70 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
           </div>
           
           {/* Badges */}
@@ -160,6 +195,40 @@ const UserProfile = ({ displayName, fullName, plan, isAdmin }: UserProfileProps)
           </div>
         </div>
       </div>
+
+      {/* Dropdown Menu */}
+      {isMenuOpen && availableSpaces.length > 1 && (
+        <>
+          <div 
+            className="fixed inset-0 z-30"
+            onClick={() => setIsMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="absolute left-4 right-4 top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-40">
+            {availableSpaces.map((space) => {
+              const Icon = space.icon;
+              const isActive = currentSpace === space.id;
+              return (
+                <button
+                  key={space.id}
+                  onClick={() => handleSpaceClick(space.id as 'admin' | 'coach' | 'personal', space.href)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                    isActive 
+                      ? 'bg-primary-50 text-primary-700 font-medium' 
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm">{space.label}</span>
+                  {isActive && (
+                    <span className="ml-auto w-2 h-2 rounded-full bg-primary-500" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -257,6 +326,7 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
         fullName={fullName}
         plan={user.plan}
         isAdmin={userIsAdmin}
+        role={user.role}
       />
 
       {/* Navigation Items */}
