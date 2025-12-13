@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { extractTokenFromHeader, verifyAccessToken } from './jwt';
 
 export interface AuthUser {
   id: number;
@@ -10,27 +11,47 @@ export interface AuthUser {
 }
 
 /**
- * Get the current user from the request headers
- * Returns null if not authenticated
+ * Get the current user from JWT token in Authorization header
+ * Returns null if not authenticated or token is invalid
  */
 export async function getCurrentUser(request: NextRequest): Promise<AuthUser | null> {
   try {
-    const userId = request.headers.get('x-user-id');
+    // Extract token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    const token = extractTokenFromHeader(authHeader);
     
-    if (!userId) {
+    if (!token) {
       return null;
     }
 
+    // Verify token
+    const payload = verifyAccessToken(token);
+    if (!payload) {
+      return null;
+    }
+
+    // Fetch user from database to ensure they still exist and get latest data
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
+      where: { id: payload.userId },
       select: {
         id: true,
         email: true,
         role: true,
         firstName: true,
         lastName: true,
+        isActive: true,
       },
     });
+
+    // Check if user exists and is active
+    if (!user || !user.isActive) {
+      return null;
+    }
+
+    // Verify role hasn't changed (security check)
+    if (user.role !== payload.role) {
+      return null;
+    }
 
     return user;
   } catch (error) {

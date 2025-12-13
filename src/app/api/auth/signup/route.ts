@@ -2,11 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { sendWelcomeEmail } from '@/lib/sendgrid';
+import { generateAccessToken, generateRefreshToken } from '@/lib/jwt';
+import { AuthUser } from '@/lib/auth';
+import { rateLimitMiddleware, RATE_LIMITS } from '@/lib/rateLimit';
+import { signupSchema, validateRequest } from '@/lib/validation';
+import { ValidationError, ConflictError, handleError } from '@/lib/errors';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimit = rateLimitMiddleware(request, RATE_LIMITS.auth);
+    if (!rateLimit.allowed) {
+      return rateLimit.response!;
+    }
+
     const body = await request.json();
     
+    // Validate input with Zod
+    const validation = validateRequest(signupSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error, code: 'VALIDATION_ERROR' },
+        { status: 400 }
+      );
+    }
+
     const {
       email,
       password,
@@ -19,32 +39,7 @@ export async function POST(request: NextRequest) {
       userType,
       plan,
       billingCycle
-    } = body;
-
-    // Validate required fields
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate password length
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Check if user already exists
     let existingUser;
@@ -69,10 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 409 }
-      );
+      throw new ConflictError('User with this email already exists');
     }
 
     // Hash password
@@ -116,6 +108,19 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Create AuthUser object for token generation
+    const authUser: AuthUser = {
+      id: user.id,
+      email: user.email,
+      role: 'participant', // New users are participants by default
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
+
+    // Generate tokens
+    const accessToken = generateAccessToken(authUser);
+    const refreshToken = generateRefreshToken(authUser);
+
     // Send welcome email (non-blocking)
     sendWelcomeEmail({
       email: user.email,
@@ -131,42 +136,28 @@ export async function POST(request: NextRequest) {
       console.error('Error sending welcome email:', err);
     });
 
-    return NextResponse.json(
+    // Create response with tokens
+    const response = NextResponse.json(
       { 
         message: 'User created successfully',
-        user 
+        user,
+        accessToken,
       },
       { status: 201 }
     );
 
+    // Set refresh token in HTTP-only cookie
+    response.cookies.set('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return response;
+
   } catch (error) {
-    console.error('Signup error:', error);
-    
-    // Provide more specific error messages
-    if (error instanceof Error) {
-      if (error.message.includes('Unique constraint')) {
-        return NextResponse.json(
-          { error: 'User with this email already exists' },
-          { status: 409 }
-        );
-      }
-      if (error.message.includes('connect') || error.message.includes('ECONNREFUSED')) {
-        return NextResponse.json(
-          { error: 'Database connection error. Please try again later.' },
-          { status: 503 }
-        );
-      }
-      if (error.message.includes('does not exist') || error.message.includes('P2021')) {
-        return NextResponse.json(
-          { error: 'Database tables not initialized. Please contact support.' },
-          { status: 503 }
-        );
-      }
-    }
-    
-    return NextResponse.json(
-      { error: 'An error occurred while creating your account. Please try again.' },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
