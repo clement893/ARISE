@@ -205,6 +205,12 @@ export default function AdminDashboard() {
   const handleUserAction = async (userId: number, action: string) => {
     setActionMenuOpen(null);
     
+    // For view action, navigate to user detail page
+    if (action === 'view') {
+      router.push(`/admin/users/${userId}`);
+      return;
+    }
+    
     // For delete action, show confirmation modal
     if (action === 'delete') {
       const user = users.find(u => u.id === userId);
@@ -433,9 +439,12 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-3">
                     <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" />
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <button
+                        onClick={() => router.push(`/admin/users/${user.id}`)}
+                        className="font-medium text-gray-900 hover:text-primary-600 transition-colors text-left"
+                      >
                         {user.firstName} {user.lastName}
-                      </p>
+                      </button>
                       <p className="text-sm text-gray-500">{user.email}</p>
                     </div>
                   </div>

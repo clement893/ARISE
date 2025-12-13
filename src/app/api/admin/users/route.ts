@@ -85,7 +85,7 @@ export async function PUT(request: NextRequest) {
       return forbiddenResponse('Admin access required');
     }
 
-    const { userId, action } = await request.json();
+    const { userId, action, userType, plan } = await request.json();
 
     if (!userId || !action) {
       return NextResponse.json(
@@ -120,7 +120,11 @@ export async function PUT(request: NextRequest) {
       case 'make_coach':
         await prisma.user.update({
           where: { id: userId },
-          data: { role: 'coach' }
+          data: { 
+            role: 'coach',
+            userType: userType || 'coach',
+            plan: plan || 'coach'
+          }
         });
         break;
 
