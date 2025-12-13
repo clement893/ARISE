@@ -201,7 +201,7 @@ export default function CoachDashboard() {
                       </TableCell>
                       <TableCell>{participant.email}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{participant.plan}</Badge>
+                        <Badge variant="neutral" outline>{participant.plan}</Badge>
                       </TableCell>
                       <TableCell>
                         {participant.hasCoach ? (

@@ -266,7 +266,7 @@ export default function ParticipantDetailPage() {
                   <Calendar className="h-5 w-5 text-gray-400 mr-2" />
                   <span className="text-sm font-medium text-gray-600">Plan</span>
                 </div>
-                <Badge variant="outline">{participant.plan}</Badge>
+                <Badge variant="neutral" outline>{participant.plan}</Badge>
               </div>
               <div>
                 <div className="flex items-center mb-2">
@@ -313,7 +313,7 @@ export default function ParticipantDetailPage() {
                         <Badge variant="secondary">In Progress</Badge>
                       )}
                       {assessment.overallScore !== null && (
-                        <Badge variant="outline">{assessment.overallScore}%</Badge>
+                        <Badge variant="neutral" outline>{assessment.overallScore}%</Badge>
                       )}
                     </div>
                   </div>
