@@ -407,7 +407,7 @@ export default function ResultsPage() {
 
         {/* Ready to accelerate your growth CTA */}
         <div className="bg-primary-500 rounded-xl p-8 text-center">
-          <h2 className="text-2xl font-bold text-white mb-2">Ready to accelerate your growth?</h2>
+          <h2 className="text-2xl font-bold !text-white mb-2">Ready to accelerate your growth?</h2>
           <p className="text-white/80 mb-6">Connect with a certified coach to unlock your full leadership potential</p>
           <button 
             onClick={() => setShowCoachingModal(true)}

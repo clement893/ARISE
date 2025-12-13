@@ -24,7 +24,7 @@ export default function AboutPage() {
         {/* Hero Section */}
         <div className="bg-primary-500 py-20">
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold !text-white mb-6">
               Empowering Authentic Leaders
             </h1>
             <p className="text-xl text-white/80">

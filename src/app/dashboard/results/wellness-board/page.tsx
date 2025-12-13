@@ -134,7 +134,7 @@ export default function WellnessBoardPage() {
               <span className="text-3xl font-bold text-white">{overallScore}%</span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white mb-1">Light score</h2>
+              <h2 className="text-xl font-bold !text-white mb-1">Light score</h2>
               <p className="text-white/80">Your overall wellness score based on all dimensions</p>
             </div>
           </div>
@@ -342,7 +342,7 @@ export default function WellnessBoardPage() {
         {/* Ready to accelerate your growth CTA */}
         <div className="bg-primary-500 rounded-xl p-8 flex items-center gap-6">
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-white mb-2">Ready to accelerate your growth?</h2>
+            <h2 className="text-xl font-bold !text-white mb-2">Ready to accelerate your growth?</h2>
             <p className="text-white/80">Connect with a certified coach to work on your wellness goals</p>
           </div>
           <button className="bg-secondary-500 hover:bg-secondary-600 text-white px-6 py-3 rounded-full font-semibold transition-colors whitespace-nowrap">

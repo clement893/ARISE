@@ -15,7 +15,7 @@ export default function CoachingCTA() {
     <div className="bg-[#0D5C5C] rounded-2xl p-8 flex items-center justify-between overflow-hidden relative">
       {/* Content */}
       <div className="relative z-10 max-w-lg">
-        <h3 className="text-2xl font-bold text-white mb-3">
+        <h3 className="text-2xl font-bold !text-white mb-3">
           Ready to accelerate your growth?
         </h3>
         <p className="text-white/80 text-sm mb-6">
