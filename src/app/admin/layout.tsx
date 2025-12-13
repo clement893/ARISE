@@ -1,111 +1,107 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import AdminSidebar from '@/components/admin/AdminSidebar';
+import { useRouter, usePathname } from 'next/navigation';
+import Sidebar from '@/components/dashboard/Sidebar';
+import { LoadingPage } from '@/components/ui';
+import { api } from '@/lib/api-client';
 
 interface User {
   id: number;
-  firstName: string;
-  lastName: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
-  role: string;
-  userType?: string;
+  plan?: string;
+  role?: string;
+  roles?: string[];
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadUser = async () => {
       try {
-        // Check localStorage first
+        // Load from localStorage first for immediate display
         const storedUser = localStorage.getItem('arise_user');
-        let parsedUser = null;
         if (storedUser) {
-          parsedUser = JSON.parse(storedUser);
-          if (parsedUser.role !== 'admin') {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        }
+
+        // Verify and refresh user data from API
+        const response = await api.get('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          const updatedUser = {
+            ...data.user,
+            role: data.user.role,
+            roles: data.user.roles || (data.user.role ? [data.user.role] : []),
+          };
+          setUser(updatedUser);
+          localStorage.setItem('arise_user', JSON.stringify(updatedUser));
+          
+          // Check if user is admin
+          const roles = updatedUser.roles || [updatedUser.role];
+          if (!roles.includes('admin')) {
             router.push('/dashboard');
+            return;
+          }
+        } else {
+          if (response.status === 401) {
+            router.push('/login');
             return;
           }
         }
 
-        // Verify with API and get full user data including userType
-        const accessToken = localStorage.getItem('arise_access_token');
-        if (accessToken) {
-          try {
-            const { authenticatedFetch } = await import('@/lib/token-refresh');
-            const response = await authenticatedFetch('/api/user/profile');
-            if (response.ok) {
-              const data = await response.json();
-              const fullUser = {
-                ...data.user,
-                role: parsedUser?.role || 'admin', // Keep role from localStorage
-              };
-              if (fullUser.role !== 'admin') {
-                router.push('/dashboard');
-                return;
-              }
-              setUser(fullUser);
-              localStorage.setItem('arise_user', JSON.stringify(fullUser));
-              setIsLoading(false);
-              return;
-            }
-          } catch (apiError) {
-            console.error('API error:', apiError);
-          }
-        }
-        
-        // Fallback: use stored user if API fails
-        if (parsedUser) {
-          setUser(parsedUser);
-          setIsLoading(false);
+        // If no user found, redirect to login
+        if (!storedUser && !user) {
+          router.push('/login');
           return;
         }
-        router.push('/login');
       } catch (error) {
-        console.error('Auth check error:', error);
+        console.error('Error loading user:', error);
         router.push('/login');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    checkAuth();
-  }, [router]);
+    loadUser();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('arise_user');
+    localStorage.removeItem('arise_access_token');
+    localStorage.removeItem('arise_signup_data');
+    router.push('/');
+  };
+
+  // Determine active page from pathname
+  const getActivePage = () => {
+    if (pathname?.startsWith('/admin/users')) return 'users';
+    if (pathname?.startsWith('/admin/products')) return 'products';
+    if (pathname === '/admin/dashboard' || pathname === '/admin') return 'dashboard';
+    return undefined;
+  };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Authentication Required</h2>
-          <p className="text-gray-600 mb-4">Please log in to access the admin panel.</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminSidebar user={user} />
-      <main className="ml-64 min-h-screen">
+    <div className="min-h-screen bg-[#f0f5f5] flex">
+      <Sidebar user={user} activePage={getActivePage()} onLogout={handleLogout} />
+      <div className="flex-1 lg:ml-0">
         {children}
-      </main>
+      </div>
     </div>
   );
 }
