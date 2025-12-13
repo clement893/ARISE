@@ -138,13 +138,18 @@ const UserProfile = ({ displayName, fullName, plan, isAdmin, role, onSwitchSpace
   const availableSpaces = [];
   
   // Determine available spaces based on user role
+  // Always include personal profile
+  availableSpaces.push({ id: 'personal', label: 'Personal Profile', href: '/dashboard', icon: User });
+  
+  // Add admin panel if user is admin
   if (isAdmin) {
     availableSpaces.push({ id: 'admin', label: 'Admin Panel', href: '/admin/dashboard', icon: Shield });
   }
+  
+  // Add coach profile if user is coach or admin
   if (role === 'coach' || isAdmin) {
     availableSpaces.push({ id: 'coach', label: 'Coach Profile', href: '/dashboard?view=coach', icon: User });
   }
-  availableSpaces.push({ id: 'personal', label: 'Personal Profile', href: '/dashboard', icon: User });
 
   const currentSpace = currentPath.startsWith('/admin') ? 'admin' : 
                        currentPath.includes('coach') ? 'coach' : 'personal';
@@ -196,8 +201,8 @@ const UserProfile = ({ displayName, fullName, plan, isAdmin, role, onSwitchSpace
         </div>
       </div>
 
-      {/* Dropdown Menu */}
-      {isMenuOpen && availableSpaces.length > 1 && (
+      {/* Dropdown Menu - Always show if menu is open, even with single space */}
+      {isMenuOpen && (
         <>
           <div 
             className="fixed inset-0 z-30"
@@ -345,11 +350,11 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
         fullName={fullName}
         plan={user.plan}
         isAdmin={userIsAdmin}
-        role={user.role}
+        role={user.role || ''}
       />
 
       {/* Navigation Items */}
-      <nav className="flex-1 px-3" aria-label="Dashboard navigation">
+      <nav className="flex-1 px-3 overflow-y-auto" aria-label="Dashboard navigation">
         <ul className="space-y-1" role="list">
           {DASHBOARD_NAV_ITEMS.map((item) => (
             <li key={item.href}>
@@ -379,17 +384,23 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Logout Button */}
-      <div className="p-4">
-        <Button
-          variant="secondary"
-          onClick={onLogout}
-          leftIcon={<LogOut className="w-5 h-5" />}
-          fullWidth
-          aria-label="Log out of your account"
-        >
-          Logout
-        </Button>
+      {/* Logout Button - Always visible at bottom */}
+      <div className="p-4 mt-auto border-t border-white/10">
+        {onLogout ? (
+          <Button
+            variant="secondary"
+            onClick={onLogout}
+            leftIcon={<LogOut className="w-5 h-5" />}
+            fullWidth
+            aria-label="Log out of your account"
+          >
+            Logout
+          </Button>
+        ) : (
+          <div className="text-white/50 text-sm text-center py-2">
+            No logout handler
+          </div>
+        )}
       </div>
     </>
   );
@@ -429,7 +440,9 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
         role="navigation"
         aria-label="Main navigation"
       >
-        {sidebarContent}
+        <div className="flex flex-col flex-1 min-h-0">
+          {sidebarContent}
+        </div>
       </aside>
     </>
   );
