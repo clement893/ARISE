@@ -168,7 +168,7 @@ export default function ParticipantDetailPage() {
               ) : (
                 <Badge variant="secondary" className="text-sm">No Coach</Badge>
               )}
-              <Badge variant="outline">{participant.plan}</Badge>
+              <Badge variant="neutral" outline>{participant.plan}</Badge>
             </div>
           </div>
         </div>
