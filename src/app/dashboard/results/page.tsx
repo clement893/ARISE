@@ -25,20 +25,28 @@ export default function ResultsPage() {
   const [generatingPDF, setGeneratingPDF] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('arise_user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        fetchAssessments(userData.id);
-      } catch {
+    const loadData = async () => {
+      const storedUser = localStorage.getItem('arise_user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          await fetchAssessments(userData.id);
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          router.push('/signup');
+          return;
+        }
+      } else {
         router.push('/signup');
+        return;
       }
-    } else {
-      router.push('/signup');
-    }
-    setLoading(false);
-  }, [router]);
+      setLoading(false);
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchAssessments = async (userId: number) => {
     try {
@@ -52,13 +60,15 @@ export default function ResultsPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Assessment data received:', data);
-        setAssessmentResults(data.summary);
+        setAssessmentResults(data.summary || null);
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Failed to fetch assessments:', errorData);
+        setAssessmentResults(null);
       }
     } catch (error) {
       console.error('Failed to fetch assessments:', error);
+      setAssessmentResults(null);
     }
   };
 
