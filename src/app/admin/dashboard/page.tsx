@@ -444,38 +444,61 @@ export default function AdminDashboard() {
                 <TableCell>
                   <div className="relative">
                     <button
-                      onClick={() => setActionMenuOpen(actionMenuOpen === user.id ? null : user.id)}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActionMenuOpen(actionMenuOpen === user.id ? null : user.id);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label="User actions"
                     >
-                      <MoreHorizontal className="w-5 h-5 text-gray-400" />
+                      <MoreHorizontal className="w-5 h-5 text-gray-600" />
                     </button>
                     {actionMenuOpen === user.id && (
-                      <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-10">
-                        <button
-                          onClick={() => handleUserAction(user.id, 'view')}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          View Profile
-                        </button>
-                        <button
-                          onClick={() => handleUserAction(user.id, 'make_coach')}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          Make Coach
-                        </button>
-                        <button
-                          onClick={() => handleUserAction(user.id, 'make_admin')}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          Make Admin
-                        </button>
-                        <button
-                          onClick={() => handleUserAction(user.id, 'delete')}
-                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                        >
-                          Delete User
-                        </button>
-                      </div>
+                      <>
+                        <div 
+                          className="fixed inset-0 z-40"
+                          onClick={() => setActionMenuOpen(null)}
+                        />
+                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUserAction(user.id, 'view');
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                          >
+                            <span>View Profile</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUserAction(user.id, 'make_coach');
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                          >
+                            <span>Make Coach</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUserAction(user.id, 'make_admin');
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                          >
+                            <span>Make Admin</span>
+                          </button>
+                          <div className="border-t border-gray-200 my-1" />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUserAction(user.id, 'delete');
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                          >
+                            <span>🗑️ Delete User</span>
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
                 </TableCell>
