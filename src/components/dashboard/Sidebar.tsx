@@ -330,80 +330,7 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  const sidebarContent = (
-    <>
-      {/* Logo */}
-      <div className="p-6 flex justify-center">
-        <Link 
-          href="/" 
-          aria-label="Go to homepage"
-          prefetch={true}
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          <Logo />
-        </Link>
-      </div>
-
-      {/* User Profile Section */}
-      <UserProfile 
-        displayName={displayName}
-        fullName={fullName}
-        plan={user.plan}
-        isAdmin={userIsAdmin}
-        role={user.role || ''}
-      />
-
-      {/* Navigation Items */}
-      <nav className="flex-1 px-3 overflow-y-auto" aria-label="Dashboard navigation">
-        <ul className="space-y-1" role="list">
-          {DASHBOARD_NAV_ITEMS.map((item) => (
-            <li key={item.href}>
-              <NavLink
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                isActive={isItemActive(item.href)}
-                onNavigate={() => setIsMobileMenuOpen(false)}
-              />
-            </li>
-          ))}
-          
-          {/* Admin Link - Only visible for admin users */}
-          {userIsAdmin && (
-            <li className="mt-4 pt-4 border-t border-white/20">
-              <NavLink
-                href="/admin"
-                icon={Shield}
-                label="Admin Panel"
-                isActive={false}
-                variant="admin"
-                onNavigate={() => setIsMobileMenuOpen(false)}
-              />
-            </li>
-          )}
-        </ul>
-      </nav>
-
-      {/* Logout Button - Always visible at bottom */}
-      <div className="p-4 mt-auto border-t border-white/10">
-        {onLogout ? (
-          <Button
-            variant="secondary"
-            onClick={onLogout}
-            leftIcon={<LogOut className="w-5 h-5" />}
-            fullWidth
-            aria-label="Log out of your account"
-          >
-            Logout
-          </Button>
-        ) : (
-          <div className="text-white/50 text-sm text-center py-2">
-            No logout handler
-          </div>
-        )}
-      </div>
-    </>
-  );
+  // No need for sidebarContent variable - render directly in JSX
 
   return (
     <>
@@ -432,7 +359,7 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
       {/* Sidebar - Desktop: Fixed, Mobile: Slide-in */}
       <aside 
         className={cn(
-          "w-[240px] min-h-screen bg-primary-500 flex flex-col",
+          "w-[240px] h-screen bg-primary-500 flex flex-col",
           "fixed lg:static top-0 left-0 z-40",
           "transform transition-transform duration-300 ease-in-out",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -440,8 +367,77 @@ export default function Sidebar({ user, activePage, onLogout }: SidebarProps) {
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="flex flex-col flex-1 min-h-0">
-          {sidebarContent}
+        {/* Logo */}
+        <div className="p-6 flex justify-center flex-shrink-0">
+          <Link 
+            href="/" 
+            aria-label="Go to homepage"
+            prefetch={true}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Logo />
+          </Link>
+        </div>
+
+        {/* User Profile Section */}
+        <div className="flex-shrink-0">
+          <UserProfile 
+            displayName={displayName}
+            fullName={fullName}
+            plan={user.plan}
+            isAdmin={userIsAdmin}
+            role={user.role || ''}
+          />
+        </div>
+
+        {/* Navigation Items - Scrollable */}
+        <nav className="flex-1 px-3 overflow-y-auto min-h-0" aria-label="Dashboard navigation">
+          <ul className="space-y-1" role="list">
+            {DASHBOARD_NAV_ITEMS.map((item) => (
+              <li key={item.href}>
+                <NavLink
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  isActive={isItemActive(item.href)}
+                  onNavigate={() => setIsMobileMenuOpen(false)}
+                />
+              </li>
+            ))}
+            
+            {/* Admin Link - Only visible for admin users */}
+            {userIsAdmin && (
+              <li className="mt-4 pt-4 border-t border-white/20">
+                <NavLink
+                  href="/admin"
+                  icon={Shield}
+                  label="Admin Panel"
+                  isActive={false}
+                  variant="admin"
+                  onNavigate={() => setIsMobileMenuOpen(false)}
+                />
+              </li>
+            )}
+          </ul>
+        </nav>
+
+        {/* Logout Button - Always visible at bottom */}
+        <div className="p-4 border-t border-white/10 flex-shrink-0">
+          {onLogout ? (
+            <Button
+              variant="secondary"
+              onClick={onLogout}
+              leftIcon={<LogOut className="w-5 h-5" />}
+              fullWidth
+              aria-label="Log out of your account"
+            >
+              Logout
+            </Button>
+          ) : (
+            <div className="text-white/50 text-sm text-center py-2">
+              No logout handler
+            </div>
+          )}
         </div>
       </aside>
     </>
