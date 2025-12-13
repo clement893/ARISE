@@ -16,10 +16,13 @@ export async function middleware(request: NextRequest) {
     '/api/auth/signup',
     '/api/auth/refresh',
     '/api/feedback', // Feedback routes use token-based auth
-    '/api/assessments/', // Assessment questions are public (but answers require auth)
   ];
 
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  // Allow public access to assessment questions (but not progress or results)
+  const isPublicQuestionsRoute = pathname.startsWith('/api/assessments/') && 
+                                  pathname.endsWith('/questions');
+
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route)) || isPublicQuestionsRoute;
   
   if (isPublicRoute) {
     return NextResponse.next();
