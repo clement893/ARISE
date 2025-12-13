@@ -53,10 +53,21 @@ export default function SelfAssessment360Page() {
   const [hasProgress, setHasProgress] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load questions from database
+  // Load questions from database and user
   useEffect(() => {
-    const loadQuestions = async () => {
+    const loadData = async () => {
+      // Load user first
+      const userData = localStorage.getItem('arise_user');
+      if (!userData) {
+        router.push('/login');
+        return;
+      }
+      
       try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        
+        // Load questions
         const response = await fetch('/api/assessments/360-self/questions');
         if (response.ok) {
           const data = await response.json();
@@ -68,35 +79,25 @@ export default function SelfAssessment360Page() {
               text: q.text,
             }));
           setSelfAssessmentQuestions(questions);
+          
+          // Check for existing progress if questions loaded
+          if (questions.length > 0) {
+            await checkExistingProgress(parsedUser.id);
+          } else {
+            setIsLoading(false);
+          }
         } else {
           console.error('Failed to load questions:', response.status);
+          setIsLoading(false);
         }
       } catch (error) {
-        console.error('Failed to load questions:', error);
-      } finally {
-        // Always set loading to false after attempting to load questions
+        console.error('Failed to load data:', error);
         setIsLoading(false);
       }
     };
-    loadQuestions();
-  }, []);
-
-  // Load user and check for existing progress
-  useEffect(() => {
-    const userData = localStorage.getItem('arise_user');
-    if (!userData) {
-      router.push('/login');
-      return;
-    }
-    const parsedUser = JSON.parse(userData);
-    setUser(parsedUser);
-    if (selfAssessmentQuestions.length > 0) {
-      checkExistingProgress(parsedUser.id);
-    } else if (!isLoading) {
-      // If questions are loaded but empty, still set loading to false
-      setIsLoading(false);
-    }
-  }, [router, selfAssessmentQuestions.length, isLoading]);
+    
+    loadData();
+  }, [router]);
 
   // Check if user has existing progress for this assessment
   const checkExistingProgress = async (userId: number) => {
