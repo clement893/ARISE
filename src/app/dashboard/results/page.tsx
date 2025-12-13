@@ -345,7 +345,10 @@ export default function ResultsPage() {
                       </div>
                     ))}
                   </div>
-                  <button className="mt-4 text-primary-500 text-sm font-medium hover:underline flex items-center gap-1">
+                  <button 
+                    onClick={() => router.push('/dashboard/results/tki')}
+                    className="mt-4 text-primary-500 text-sm font-medium hover:underline flex items-center gap-1"
+                  >
                     View full report <ChevronRight className="w-4 h-4" />
                   </button>
                 </>
