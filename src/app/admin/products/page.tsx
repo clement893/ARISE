@@ -26,6 +26,7 @@ import {
   Modal,
   LoadingInline,
 } from '@/components/ui';
+import { api } from '@/lib/api-client';
 
 interface Product {
   id: number;
@@ -74,7 +75,7 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/products');
+      const response = await api.get('/api/admin/products');
       if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();
       setProducts(data.products || []);
@@ -154,11 +155,9 @@ export default function ProductsPage() {
       
       const method = editingProduct ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const response = method === 'PUT' 
+        ? await api.put(url, formData)
+        : await api.post(url, formData);
 
       if (!response.ok) {
         const data = await response.json();
@@ -180,9 +179,7 @@ export default function ProductsPage() {
     }
 
     try {
-      const response = await fetch(`/api/admin/products/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await api.delete(`/api/admin/products/${id}`);
 
       if (!response.ok) {
         throw new Error('Failed to delete product');
@@ -238,9 +235,7 @@ export default function ProductsPage() {
                 try {
                   setIsSaving(true);
                   setError('');
-                  const response = await fetch('/api/admin/products/seed', {
-                    method: 'POST',
-                  });
+                  const response = await api.post('/api/admin/products/seed');
                   const data = await response.json();
                   
                   if (!response.ok) {
