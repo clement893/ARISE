@@ -86,6 +86,23 @@ export default function AdminDashboard() {
     filterUsers();
   }, [users, activeTab, searchQuery]);
 
+  // Close action menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actionMenuOpen !== null) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.action-menu-container')) {
+          setActionMenuOpen(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [actionMenuOpen]);
+
   const loadData = async () => {
     try {
       console.log('Loading admin data...');
@@ -442,7 +459,7 @@ export default function AdminDashboard() {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div className="relative">
+                  <div className="relative action-menu-container">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -454,51 +471,41 @@ export default function AdminDashboard() {
                       <MoreHorizontal className="w-5 h-5 text-gray-600" />
                     </button>
                     {actionMenuOpen === user.id && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-40"
-                          onClick={() => setActionMenuOpen(null)}
-                        />
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUserAction(user.id, 'view');
-                            }}
-                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                          >
-                            <span>View Profile</span>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUserAction(user.id, 'make_coach');
-                            }}
-                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                          >
-                            <span>Make Coach</span>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUserAction(user.id, 'make_admin');
-                            }}
-                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                          >
-                            <span>Make Admin</span>
-                          </button>
-                          <div className="border-t border-gray-200 my-1" />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUserAction(user.id, 'delete');
-                            }}
-                            className="w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-                          >
-                            <span>🗑️ Delete User</span>
-                          </button>
-                        </div>
-                      </>
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                        <button
+                          onClick={() => {
+                            handleUserAction(user.id, 'view');
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          View Profile
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleUserAction(user.id, 'make_coach');
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          Make Coach
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleUserAction(user.id, 'make_admin');
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          Make Admin
+                        </button>
+                        <div className="border-t border-gray-200 my-1" />
+                        <button
+                          onClick={() => {
+                            handleUserAction(user.id, 'delete');
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          🗑️ Delete User
+                        </button>
+                      </div>
                     )}
                   </div>
                 </TableCell>
