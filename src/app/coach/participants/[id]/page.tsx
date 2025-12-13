@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { 
   ArrowLeft,
@@ -53,13 +53,8 @@ export default function ParticipantDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    if (participantId) {
-      loadParticipant();
-    }
-  }, [participantId]);
-
-  const loadParticipant = async () => {
+  const loadParticipant = useCallback(async () => {
+    if (!participantId) return;
     try {
       setIsLoading(true);
       setLoadError(null);
@@ -79,9 +74,13 @@ export default function ParticipantDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [participantId]);
 
-  const handleAssignCoach = async (assign: boolean) => {
+  useEffect(() => {
+    loadParticipant();
+  }, [loadParticipant]);
+
+  const handleAssignCoach = useCallback(async (assign: boolean) => {
     if (!participant) return;
 
     try {
@@ -100,7 +99,7 @@ export default function ParticipantDetailPage() {
       console.error('Error updating participant:', error);
       alert('Failed to update participant');
     }
-  };
+  }, [participant, loadParticipant]);
 
   if (isLoading) {
     return (

@@ -18,10 +18,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const filter = searchParams.get('filter') || 'all'; // all, with_coach, without_coach
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const skip = (page - 1) * limit;
 
-    // Build where clause
+    // Build where clause - filter at DB level
     const where: any = {
       isActive: true,
+      role: 'participant', // Filter at DB level
     };
 
     // Add search filter
@@ -40,38 +44,48 @@ export async function GET(request: NextRequest) {
       where.hasCoach = false;
     }
 
-    const allUsers = await prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        plan: true,
-        createdAt: true,
-        hasCoach: true,
-        role: true,
-        roles: true,
-        assessments: {
-          select: {
-            id: true,
-            assessmentType: true,
-            completedAt: true,
-            overallScore: true,
+    // Use Promise.all for parallel queries
+    const [allUsers, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          plan: true,
+          createdAt: true,
+          hasCoach: true,
+          roles: true,
+          _count: {
+            select: {
+              assessments: true,
+            }
+          },
+          assessments: {
+            select: {
+              id: true,
+              assessmentType: true,
+              completedAt: true,
+              overallScore: true,
+            },
+            take: 10, // Limit assessments per user
           }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where })
+    ]);
 
-    // Filter to only participants (not coaches or admins)
+    // Filter to only participants (check roles array for admin/coach)
     const participants = allUsers.filter(user => {
-      const roles = user.roles 
-        ? (Array.isArray(user.roles) ? user.roles : JSON.parse(user.roles as string))
-        : [user.role];
-      return roles.includes('participant') && !roles.includes('admin') && !roles.includes('coach');
+      if (!user.roles) return true; // If no roles array, assume participant
+      const roles = Array.isArray(user.roles) ? user.roles : JSON.parse(user.roles as string);
+      return !roles.includes('admin') && !roles.includes('coach');
     });
 
     // Add computed fields
@@ -95,6 +109,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       participants: participantsWithStats,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      }
     });
   } catch (error) {
     console.error('Error fetching participants:', error);

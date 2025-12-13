@@ -15,80 +15,99 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all participants (users who are not coaches/admins)
-    // Note: We'll filter by role field first, then check roles array in code
-    const allUsers = await prisma.user.findMany({
+    // Optimized: Use Prisma aggregation and filtering
+    // First, get participant count efficiently
+    const [participantsData, assessmentResults, totalParticipantsCount] = await Promise.all([
+      // Get participants with minimal data
+      prisma.user.findMany({
+        where: {
+          isActive: true,
+          role: 'participant', // Filter at DB level first
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          plan: true,
+          createdAt: true,
+          hasCoach: true,
+          roles: true,
+        },
+        take: 10, // Only get first 10 for preview
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      // Get all assessment results in parallel
+      prisma.assessmentResult.findMany({
+        where: {
+          user: {
+            isActive: true,
+            role: 'participant',
+          }
+        },
+        select: {
+          id: true,
+          userId: true,
+          assessmentType: true,
+          completedAt: true,
+          overallScore: true,
+        }
+      }),
+      // Count total participants
+      prisma.user.count({
+        where: {
+          isActive: true,
+          role: 'participant',
+        }
+      })
+    ]);
+
+    // Filter participants that don't have admin/coach in roles array
+    const participants = participantsData.filter(user => {
+      if (!user.roles) return true; // If no roles array, assume participant
+      const roles = Array.isArray(user.roles) ? user.roles : JSON.parse(user.roles as string);
+      return !roles.includes('admin') && !roles.includes('coach');
+    });
+
+    // Calculate statistics efficiently
+    const participantsWithCoachCount = await prisma.user.count({
       where: {
         isActive: true,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        plan: true,
-        createdAt: true,
+        role: 'participant',
         hasCoach: true,
-        role: true,
-        roles: true,
       }
     });
 
-    // Filter to only participants (not coaches or admins)
-    const participants = allUsers.filter(user => {
-      const roles = user.roles 
-        ? (Array.isArray(user.roles) ? user.roles : JSON.parse(user.roles as string))
-        : [user.role];
-      return roles.includes('participant') && !roles.includes('admin') && !roles.includes('coach');
-    });
-
-    // Get assessment results for all participants
-    const participantIds = participants.map(p => p.id);
-    const assessmentResults = await prisma.assessmentResult.findMany({
-      where: {
-        userId: {
-          in: participantIds
-        }
-      },
-      select: {
-        id: true,
-        userId: true,
-        assessmentType: true,
-        completedAt: true,
-        overallScore: true,
-      }
-    });
-
-    // Calculate statistics
-    const totalParticipants = participants.length;
-    const participantsWithCoach = participants.filter(p => p.hasCoach).length;
     const totalAssessments = assessmentResults.length;
     const completedAssessments = assessmentResults.filter(a => a.completedAt !== null).length;
     
-    // Group assessments by type
-    const assessmentsByType = assessmentResults.reduce((acc, result) => {
-      acc[result.assessmentType] = (acc[result.assessmentType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    // Group assessments by type (single pass)
+    const assessmentsByType: Record<string, number> = {};
+    let totalScore = 0;
+    let scoreCount = 0;
+    
+    for (const result of assessmentResults) {
+      assessmentsByType[result.assessmentType] = (assessmentsByType[result.assessmentType] || 0) + 1;
+      if (result.overallScore !== null) {
+        totalScore += result.overallScore;
+        scoreCount++;
+      }
+    }
 
-    // Calculate average scores
-    const scores = assessmentResults
-      .filter(a => a.overallScore !== null)
-      .map(a => a.overallScore!);
-    const averageScore = scores.length > 0
-      ? scores.reduce((a, b) => a + b, 0) / scores.length
-      : 0;
+    const averageScore = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
 
     return NextResponse.json({
       stats: {
-        totalParticipants,
-        participantsWithCoach,
+        totalParticipants: totalParticipantsCount,
+        participantsWithCoach: participantsWithCoachCount,
         totalAssessments,
         completedAssessments,
-        averageScore: Math.round(averageScore),
+        averageScore,
         assessmentsByType,
       },
-      participants: participants.slice(0, 10), // Return first 10 for preview
+      participants, // Already limited to 10
     });
   } catch (error) {
     console.error('Error fetching coach stats:', error);

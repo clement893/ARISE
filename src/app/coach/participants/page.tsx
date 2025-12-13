@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Users, 
@@ -43,7 +43,6 @@ interface Participant {
 export default function CoachParticipantsPage() {
   const router = useRouter();
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [filteredParticipants, setFilteredParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -53,11 +52,31 @@ export default function CoachParticipantsPage() {
     loadData();
   }, []);
 
-  useEffect(() => {
-    filterParticipants();
+  // Memoize filtered participants to avoid unnecessary recalculations
+  const filteredParticipants = useMemo(() => {
+    let filtered = [...participants];
+
+    // Apply tab filter
+    if (activeTab === 'with_coach') {
+      filtered = filtered.filter(p => p.hasCoach === true);
+    } else if (activeTab === 'without_coach') {
+      filtered = filtered.filter(p => p.hasCoach !== true);
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.email.toLowerCase().includes(query) ||
+        (p.firstName && p.firstName.toLowerCase().includes(query)) ||
+        (p.lastName && p.lastName.toLowerCase().includes(query))
+      );
+    }
+
+    return filtered;
   }, [participants, activeTab, searchQuery]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       setLoadError(null);
@@ -79,28 +98,6 @@ export default function CoachParticipantsPage() {
     }
   };
 
-  const filterParticipants = () => {
-    let filtered = [...participants];
-
-    // Apply tab filter
-    if (activeTab === 'with_coach') {
-      filtered = filtered.filter(p => p.hasCoach === true);
-    } else if (activeTab === 'without_coach') {
-      filtered = filtered.filter(p => p.hasCoach !== true);
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.email.toLowerCase().includes(query) ||
-        (p.firstName && p.firstName.toLowerCase().includes(query)) ||
-        (p.lastName && p.lastName.toLowerCase().includes(query))
-      );
-    }
-
-    setFilteredParticipants(filtered);
-  };
 
   const handleAssignCoach = async (participantId: number, assign: boolean) => {
     try {
@@ -119,7 +116,7 @@ export default function CoachParticipantsPage() {
       console.error('Error updating participant:', error);
       alert('Failed to update participant');
     }
-  };
+  }, []);
 
   if (isLoading) {
     return (
