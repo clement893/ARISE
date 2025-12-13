@@ -54,6 +54,30 @@ export default function WellnessTestPage() {
   const [hasProgress, setHasProgress] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Check if user has existing progress for this assessment
+  const checkExistingProgress = async (userId: number) => {
+    try {
+      const accessToken = localStorage.getItem('arise_access_token');
+      const response = await fetch('/api/assessments/progress?type=wellness', {
+        headers: {
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.progress) {
+          setHasProgress(true);
+          setCurrentQuestion(data.progress.currentQuestion || 0);
+          setAnswers(data.progress.answers || {});
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check progress:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Load questions from database and user
   useEffect(() => {
     const loadData = async () => {
@@ -99,30 +123,6 @@ export default function WellnessTestPage() {
     
     loadData();
   }, [router]);
-
-  // Check if user has existing progress for this assessment
-  const checkExistingProgress = async (userId: number) => {
-    try {
-      const accessToken = localStorage.getItem('arise_access_token');
-      const response = await fetch('/api/assessments/progress?type=wellness', {
-        headers: {
-          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.progress) {
-          setHasProgress(true);
-          setCurrentQuestion(data.progress.currentQuestion || 0);
-          setAnswers(data.progress.answers || {});
-        }
-      }
-    } catch (error) {
-      console.error('Failed to check progress:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Save progress to database
   const saveProgress = async () => {
