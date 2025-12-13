@@ -228,12 +228,35 @@ export default function ProductsPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Products & Pricing</h1>
             <p className="text-gray-600 mt-1">Manage your subscription plans and pricing</p>
           </div>
-          <Button
-            onClick={() => handleOpenModal()}
-            leftIcon={<Plus className="w-5 h-5" />}
-          >
-            Add Product
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (!confirm('This will add/update products from signup and pricing pages. Continue?')) {
+                  return;
+                }
+                try {
+                  const response = await fetch('/api/admin/products/seed', {
+                    method: 'POST',
+                  });
+                  if (!response.ok) throw new Error('Failed to seed products');
+                  const data = await response.json();
+                  alert(`Products seeded successfully!\n${data.results.map((r: any) => `${r.action}: ${r.product}`).join('\n')}`);
+                  fetchProducts();
+                } catch (err) {
+                  alert('Failed to seed products');
+                }
+              }}
+            >
+              Seed Default Products
+            </Button>
+            <Button
+              onClick={() => handleOpenModal()}
+              leftIcon={<Plus className="w-5 h-5" />}
+            >
+              Add Product
+            </Button>
+          </div>
         </div>
 
         {/* Products Table */}
