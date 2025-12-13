@@ -205,7 +205,7 @@ export default function CoachDashboard() {
                       </TableCell>
                       <TableCell>
                         {participant.hasCoach ? (
-                          <Badge variant="default">Has Coach</Badge>
+                          <Badge variant="success">Has Coach</Badge>
                         ) : (
                           <Badge variant="secondary">No Coach</Badge>
                         )}
