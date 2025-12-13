@@ -77,14 +77,18 @@ export async function apiRequest(
 
   // If unauthorized, try to refresh token and retry once
   if (response.status === 401 && !skipAuth) {
+    console.log('Token expired or invalid, attempting to refresh...');
     const newToken = await refreshAccessToken();
     if (newToken) {
+      console.log('Token refreshed successfully, retrying request...');
       requestHeaders['Authorization'] = `Bearer ${newToken}`;
       response = await fetch(url, {
         ...restOptions,
         headers: requestHeaders,
         credentials: 'include',
       });
+    } else {
+      console.error('Failed to refresh token, user may need to login again');
     }
   }
 

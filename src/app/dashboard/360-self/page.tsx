@@ -221,13 +221,9 @@ export default function SelfAssessment360Page() {
 
       // Save to database
       try {
-        const accessToken = localStorage.getItem('arise_access_token');
-        const response = await fetch('/api/assessments', {
+        const { authenticatedFetch } = await import('@/lib/token-refresh');
+        const response = await authenticatedFetch('/api/assessments', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-          },
           body: JSON.stringify({
             assessmentType: 'self_360',
             answers: answers,

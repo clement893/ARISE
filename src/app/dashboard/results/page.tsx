@@ -42,14 +42,10 @@ export default function ResultsPage() {
 
   const fetchAssessments = async (userId: number) => {
     try {
-      const accessToken = localStorage.getItem('arise_access_token');
-      console.log('Fetching assessments for user:', userId, 'Token present:', !!accessToken);
+      console.log('Fetching assessments for user:', userId);
       
-      const response = await fetch('/api/assessments', {
-        headers: {
-          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-        },
-      });
+      const { authenticatedFetch } = await import('@/lib/token-refresh');
+      const response = await authenticatedFetch('/api/assessments');
       
       console.log('Assessment fetch response status:', response.status);
       
@@ -71,12 +67,8 @@ export default function ResultsPage() {
     
     setGeneratingPDF(true);
     try {
-      const accessToken = localStorage.getItem('arise_access_token');
-      const response = await fetch('/api/assessments', {
-        headers: {
-          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-        },
-      });
+      const { authenticatedFetch } = await import('@/lib/token-refresh');
+      const response = await authenticatedFetch('/api/assessments');
       
       if (response.ok) {
         const data = await response.json();

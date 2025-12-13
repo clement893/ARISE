@@ -197,15 +197,11 @@ export default function TKITestPage() {
       const overallScore = Math.round((maxScore / 12) * 100);
 
       try {
-        const accessToken = localStorage.getItem('arise_access_token');
-        console.log('Saving TKI assessment - Token present:', !!accessToken, 'Dominant:', dominant, 'Overall score:', overallScore);
+        console.log('Saving TKI assessment - Dominant:', dominant, 'Overall score:', overallScore);
         
-        const response = await fetch('/api/assessments', {
+        const { authenticatedFetch } = await import('@/lib/token-refresh');
+        const response = await authenticatedFetch('/api/assessments', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-          },
           body: JSON.stringify({
             assessmentType: 'tki',
             answers: answers,
