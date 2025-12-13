@@ -87,20 +87,55 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
+      console.log('Loading admin data...');
       const { authenticatedFetch } = await import('@/lib/token-refresh');
       const response = await authenticatedFetch('/api/admin/stats');
+      console.log('Admin stats response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setStats(data.stats);
-        setUsers(data.users);
+        console.log('Admin data loaded:', { stats: data.stats, usersCount: data.users?.length });
+        setStats(data.stats || {
+          totalUsers: 0,
+          activeUsers: 0,
+          totalRevenue: 0,
+          assessmentsCompleted: 0,
+          userGrowth: 0,
+          activeRate: 0,
+          revenueGrowth: 0,
+        });
+        setUsers(data.users || []);
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('Error loading admin data:', errorData);
+        // Set empty data to prevent blank screen
+        setStats({
+          totalUsers: 0,
+          activeUsers: 0,
+          totalRevenue: 0,
+          assessmentsCompleted: 0,
+          userGrowth: 0,
+          activeRate: 0,
+          revenueGrowth: 0,
+        });
+        setUsers([]);
       }
     } catch (error) {
       console.error('Error loading admin data:', error);
+      // Set empty data to prevent blank screen
+      setStats({
+        totalUsers: 0,
+        activeUsers: 0,
+        totalRevenue: 0,
+        assessmentsCompleted: 0,
+        userGrowth: 0,
+        activeRate: 0,
+        revenueGrowth: 0,
+      });
+      setUsers([]);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const filterUsers = () => {
@@ -243,6 +278,8 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
+  console.log('Rendering admin dashboard:', { stats, usersCount: users.length, filteredCount: filteredUsers.length });
 
   return (
     <div className="p-8">
