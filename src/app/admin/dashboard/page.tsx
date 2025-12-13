@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Users, 
   UserCheck, 
@@ -11,7 +12,8 @@ import {
   MoreHorizontal,
   Download,
   AlertTriangle,
-  X
+  X,
+  UserPlus
 } from 'lucide-react';
 
 // Import UI components
@@ -56,6 +58,7 @@ interface User {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -398,6 +401,13 @@ export default function AdminDashboard() {
               />
               <Button variant="outline" leftIcon={<Filter className="w-4 h-4" />} className="w-full sm:w-auto">
                 Filters
+              </Button>
+              <Button 
+                onClick={() => router.push('/admin/users/create')}
+                leftIcon={<UserPlus className="w-4 h-4" />}
+                className="w-full sm:w-auto"
+              >
+                Create User
               </Button>
             </div>
           </div>
