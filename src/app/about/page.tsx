@@ -72,7 +72,7 @@ export default function AboutPage() {
         </div>
 
         {/* Team Section */}
-        <div className="max-w-4xl mx-auto px-4 py-16">
+        <div id="team" className="max-w-4xl mx-auto px-4 py-16">
           <h2 className="text-3xl font-bold text-center text-neutral-900 mb-12">Leadership Team</h2>
           <div className="grid md:grid-cols-2 gap-8">
             {team.map((member) => (
