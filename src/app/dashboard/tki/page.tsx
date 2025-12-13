@@ -106,8 +106,11 @@ export default function TKITestPage() {
   // Check if user has existing progress for this assessment
   const checkExistingProgress = async (userId: number) => {
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       const response = await fetch('/api/assessments/progress?type=tki', {
-        headers: { 'x-user-id': userId.toString() },
+        headers: {
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+        },
       });
       if (response.ok) {
         const data = await response.json();
@@ -129,11 +132,12 @@ export default function TKITestPage() {
     if (!user || isSaving) return;
     setIsSaving(true);
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       await fetch('/api/assessments/progress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id.toString(),
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
           assessmentType: 'tki',
@@ -153,9 +157,12 @@ export default function TKITestPage() {
   const deleteProgress = async () => {
     if (!user) return;
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       await fetch('/api/assessments/progress?type=tki', {
         method: 'DELETE',
-        headers: { 'x-user-id': user.id.toString() },
+        headers: {
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+        },
       });
     } catch (error) {
       console.error('Failed to delete progress:', error);
@@ -190,11 +197,12 @@ export default function TKITestPage() {
       const overallScore = Math.round((maxScore / 12) * 100);
 
       try {
-        await fetch('/api/assessments', {
+        const accessToken = localStorage.getItem('arise_access_token');
+        const response = await fetch('/api/assessments', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user?.id?.toString() || '',
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             assessmentType: 'tki',
@@ -204,6 +212,11 @@ export default function TKITestPage() {
             overallScore: overallScore,
           }),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to save assessment');
+        }
         // Delete progress since test is completed
         await deleteProgress();
       } catch (error) {

@@ -96,9 +96,10 @@ function ProfilePageContent() {
 
       // Essayer de charger les données depuis l'API
       try {
+        const accessToken = localStorage.getItem('arise_access_token');
         const response = await fetch('/api/user/profile', {
           headers: {
-            'x-user-id': parsedUser.id.toString(),
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           },
         });
 
@@ -175,11 +176,12 @@ function ProfilePageContent() {
     setSaveMessage(null);
 
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id.toString(),
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
           firstName: profileData.firstName,

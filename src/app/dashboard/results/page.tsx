@@ -42,9 +42,10 @@ export default function ResultsPage() {
 
   const fetchAssessments = async (userId: number) => {
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       const response = await fetch('/api/assessments', {
         headers: {
-          'x-user-id': userId.toString(),
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         },
       });
       if (response.ok) {
@@ -61,9 +62,10 @@ export default function ResultsPage() {
     
     setGeneratingPDF(true);
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       const response = await fetch('/api/assessments', {
         headers: {
-          'x-user-id': user.id.toString(),
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         },
       });
       

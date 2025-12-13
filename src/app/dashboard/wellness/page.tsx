@@ -106,8 +106,11 @@ export default function WellnessTestPage() {
   // Check if user has existing progress for this assessment
   const checkExistingProgress = async (userId: number) => {
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       const response = await fetch('/api/assessments/progress?type=wellness', {
-        headers: { 'x-user-id': userId.toString() },
+        headers: {
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+        },
       });
       if (response.ok) {
         const data = await response.json();
@@ -129,11 +132,12 @@ export default function WellnessTestPage() {
     if (!user || isSaving) return;
     setIsSaving(true);
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       await fetch('/api/assessments/progress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id.toString(),
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
           assessmentType: 'wellness',
@@ -153,9 +157,12 @@ export default function WellnessTestPage() {
   const deleteProgress = async () => {
     if (!user) return;
     try {
+      const accessToken = localStorage.getItem('arise_access_token');
       await fetch('/api/assessments/progress?type=wellness', {
         method: 'DELETE',
-        headers: { 'x-user-id': user.id.toString() },
+        headers: {
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+        },
       });
     } catch (error) {
       console.error('Failed to delete progress:', error);
@@ -214,11 +221,12 @@ export default function WellnessTestPage() {
 
       // Save to database
       try {
-        await fetch('/api/assessments', {
+        const accessToken = localStorage.getItem('arise_access_token');
+        const response = await fetch('/api/assessments', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user?.id?.toString() || '',
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             assessmentType: 'wellness',
@@ -228,6 +236,12 @@ export default function WellnessTestPage() {
             overallScore: overallScore,
           }),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to save assessment');
+        }
+
         // Delete progress since test is completed
         await deleteProgress();
       } catch (error) {

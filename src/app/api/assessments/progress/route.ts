@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser, unauthorizedResponse } from '@/lib/auth';
 
 /**
  * Assessment Progress API
@@ -11,15 +12,14 @@ import { prisma } from '@/lib/prisma';
 // GET - Retrieve progress for a specific assessment or all in-progress assessments
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
-    const assessmentType = request.nextUrl.searchParams.get('type');
+    const user = await getCurrentUser(request);
     
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID required' },
-        { status: 401 }
-      );
+    if (!user) {
+      return unauthorizedResponse('Authentication required');
     }
+
+    const userId = user.id;
+    const assessmentType = request.nextUrl.searchParams.get('type');
 
     // If specific type requested, get that progress
     if (assessmentType) {
@@ -54,14 +54,13 @@ export async function GET(request: NextRequest) {
 // POST - Save or update progress for an assessment
 export async function POST(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
+    const user = await getCurrentUser(request);
     
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID required' },
-        { status: 401 }
-      );
+    if (!user) {
+      return unauthorizedResponse('Authentication required');
     }
+
+    const userId = user.id;
 
     const body = await request.json();
     const { assessmentType, currentQuestion, answers, totalQuestions } = body;
@@ -120,15 +119,14 @@ export async function POST(request: NextRequest) {
 // DELETE - Remove progress when assessment is completed
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
-    const assessmentType = request.nextUrl.searchParams.get('type');
+    const user = await getCurrentUser(request);
     
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID required' },
-        { status: 401 }
-      );
+    if (!user) {
+      return unauthorizedResponse('Authentication required');
     }
+
+    const userId = user.id;
+    const assessmentType = request.nextUrl.searchParams.get('type');
 
     if (!assessmentType) {
       return NextResponse.json(

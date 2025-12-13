@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser, unauthorizedResponse } from '@/lib/auth';
 
 // GET - Récupérer tous les résultats d'assessments d'un utilisateur
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
-    const assessmentType = request.nextUrl.searchParams.get('type');
+    // Get user from JWT token (middleware adds x-user-id header)
+    const user = await getCurrentUser(request);
     
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID required' },
-        { status: 401 }
-      );
+    if (!user) {
+      return unauthorizedResponse('Authentication required');
     }
+
+    const userId = user.id;
+    const assessmentType = request.nextUrl.searchParams.get('type');
 
     const whereClause: any = { userId: parseInt(userId) };
     if (assessmentType) {
@@ -48,14 +49,14 @@ export async function GET(request: NextRequest) {
 // POST - Sauvegarder un résultat d'assessment
 export async function POST(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
+    // Get user from JWT token (middleware adds x-user-id header)
+    const user = await getCurrentUser(request);
     
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID required' },
-        { status: 401 }
-      );
+    if (!user) {
+      return unauthorizedResponse('Authentication required');
     }
+
+    const userId = user.id;
 
     const body = await request.json();
     const { assessmentType, answers, scores, dominantResult, overallScore } = body;

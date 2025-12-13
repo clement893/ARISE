@@ -41,7 +41,11 @@ export default function LoginPage() {
         throw new Error(data.error || 'Invalid credentials');
       }
 
+      // Store user data and access token
       localStorage.setItem('arise_user', JSON.stringify(data.user));
+      if (data.accessToken) {
+        localStorage.setItem('arise_access_token', data.accessToken);
+      }
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

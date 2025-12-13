@@ -103,6 +103,11 @@ export default function CompleteProfile() {
         userType: data.user.userType,
       }));
 
+      // Store access token for authenticated requests
+      if (data.accessToken) {
+        localStorage.setItem('arise_access_token', data.accessToken);
+      }
+
       router.push('/signup/welcome');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
