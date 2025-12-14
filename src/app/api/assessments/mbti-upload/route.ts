@@ -245,52 +245,52 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
         return null;
       }
 
-    // Get the response
-    const messages = await openai.beta.threads.messages.list(thread.id);
-    const lastMessage = messages.data[0];
-    let extractedType = null;
-    
-    if (lastMessage.content && lastMessage.content.length > 0) {
-      const content = lastMessage.content[0];
-      if (content.type === 'text') {
-        extractedType = content.text.value.trim().toUpperCase();
+      // Get the response
+      const messages = await openai.beta.threads.messages.list(thread.id);
+      const lastMessage = messages.data[0];
+      let extractedType = null;
+      
+      if (lastMessage.content && lastMessage.content.length > 0) {
+        const content = lastMessage.content[0];
+        if (content.type === 'text') {
+          extractedType = content.text.value.trim().toUpperCase();
+        }
       }
-    }
 
-    // Clean up files and assistant
-    await openai.files.del(file.id);
-    await openai.beta.assistants.del(assistant.id);
+      // Clean up files and assistant
+      await openai.files.del(file.id);
+      await openai.beta.assistants.del(assistant.id);
 
-    console.log('OpenAI Assistants API response:', extractedType);
+      console.log('OpenAI Assistants API response:', extractedType);
 
-    if (!extractedType || extractedType === 'NOT_FOUND') {
-      console.log('OpenAI Assistants API did not find MBTI type');
+      if (!extractedType || extractedType === 'NOT_FOUND') {
+        console.log('OpenAI Assistants API did not find MBTI type');
+        return null;
+      }
+
+      // Validate the extracted type
+      const validMBTITypes = [
+        'ENFJ', 'ENFP', 'ENTJ', 'ENTP',
+        'ESFJ', 'ESFP', 'ESTJ', 'ESTP',
+        'INFJ', 'INFP', 'INTJ', 'INTP',
+        'ISFJ', 'ISFP', 'ISTJ', 'ISTP'
+      ];
+
+      if (validMBTITypes.includes(extractedType)) {
+        console.log(`AI Assistants API successfully extracted MBTI type: ${extractedType}`);
+        return extractedType;
+      }
+
+      // Try to extract from the response if it contains the type
+      for (const type of validMBTITypes) {
+        if (extractedType.includes(type)) {
+          console.log(`AI extracted MBTI type from response: ${type}`);
+          return type;
+        }
+      }
+
+      console.log('OpenAI Assistants API returned invalid MBTI type:', extractedType);
       return null;
-    }
-
-    // Validate the extracted type
-    const validMBTITypes = [
-      'ENFJ', 'ENFP', 'ENTJ', 'ENTP',
-      'ESFJ', 'ESFP', 'ESTJ', 'ESTP',
-      'INFJ', 'INFP', 'INTJ', 'INTP',
-      'ISFJ', 'ISFP', 'ISTJ', 'ISTP'
-    ];
-
-    if (validMBTITypes.includes(extractedType)) {
-      console.log(`AI Assistants API successfully extracted MBTI type: ${extractedType}`);
-      return extractedType;
-    }
-
-    // Try to extract from the response if it contains the type
-    for (const type of validMBTITypes) {
-      if (extractedType.includes(type)) {
-        console.log(`AI extracted MBTI type from response: ${type}`);
-        return type;
-      }
-    }
-
-    console.log('OpenAI Assistants API returned invalid MBTI type:', extractedType);
-    return null;
   } catch (error: any) {
     console.error('Error extracting MBTI type with AI Assistants API:', error.message);
     console.error('Error details:', error);
