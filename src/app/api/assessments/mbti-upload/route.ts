@@ -85,28 +85,15 @@ export async function POST(request: NextRequest) {
 
 async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
   try {
-    // Try to extract text from PDF using multiple methods
+    // Extract text from PDF using direct UTF-8 conversion
+    // This works for most PDFs that contain text (not scanned images)
     let text = '';
     
-    // Method 1: Direct UTF-8 conversion (works for some PDFs)
     try {
       text = buffer.toString('utf-8');
     } catch (e) {
-      // Continue to other methods
-    }
-
-    // Method 2: Try to use pdf-parse if available (dynamic import)
-    // Note: pdf-parse is optional and may not be installed
-    try {
-      // Use dynamic import with error handling
-      const pdfParseModule = await import('pdf-parse').catch(() => null);
-      if (pdfParseModule) {
-        const data = await pdfParseModule.default(buffer);
-        text = data.text;
-      }
-    } catch (e) {
-      // pdf-parse not available or failed, continue with text extraction
-      // This is expected if pdf-parse is not installed
+      console.error('Error converting PDF buffer to text:', e);
+      return null;
     }
 
     // Valid MBTI types
@@ -122,11 +109,10 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     const mbtiPatterns = [
       /(?:type|personality|mbti)[\s:]*([EI][NS][FT][JP])/i,
       /(?:you are|your type is|personality type|your personality)[\s:]*([EI][NS][FT][JP])/i,
-      /([EI][NS][FT][JP])/g,
       /(?:result|outcome)[\s:]*([EI][NS][FT][JP])/i,
     ];
 
-    // First, try to find exact matches with context
+    // First, try to find exact matches with context (more reliable)
     for (const pattern of mbtiPatterns) {
       const matches = text.match(pattern);
       if (matches && matches[1]) {
@@ -138,6 +124,7 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     }
 
     // If no contextual match, search for any valid MBTI type in the text
+    // Use word boundaries to avoid partial matches
     for (const type of validMBTITypes) {
       const regex = new RegExp(`\\b${type}\\b`, 'i');
       if (regex.test(text)) {
