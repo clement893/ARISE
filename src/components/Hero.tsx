@@ -28,7 +28,7 @@ export default function Hero() {
           {/* Main heading */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6">
             Empowering<br />
-            authentic <span className="text-secondary-500">leaders</span>
+            <span className="text-white">authentic</span> leaders
           </h1>
 
           {/* Subtitle */}

@@ -51,7 +51,7 @@ export default function ChooseYourPath() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-16">
-          <span className="text-[#D4A84B] text-sm font-semibold uppercase tracking-wider">
+          <span className="text-[#c9a961] text-sm font-semibold uppercase tracking-wider">
             PRICING
           </span>
           <h2 className="mt-4 text-3xl md:text-4xl font-bold text-[#333333]">
