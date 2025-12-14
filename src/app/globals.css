@@ -23,29 +23,29 @@
    ============================================ */
 
 @theme inline {
-  /* Colors - Primary (Teal) */
-  --color-primary-50: oklch(95% 0.02 180);
-  --color-primary-100: oklch(90% 0.03 180);
-  --color-primary-200: oklch(82% 0.04 180);
-  --color-primary-300: oklch(72% 0.05 180);
-  --color-primary-400: oklch(60% 0.06 180);
-  --color-primary-500: oklch(40% 0.06 180);  /* Main teal */
-  --color-primary-600: oklch(35% 0.05 180);
-  --color-primary-700: oklch(32% 0.05 180);  /* Dark teal */
-  --color-primary-800: oklch(28% 0.04 180);
-  --color-primary-900: oklch(22% 0.03 180);
+  /* Colors - Primary (Teal) - New Palette */
+  --color-primary-50: #e6f2f2;
+  --color-primary-100: #b3d9d9;
+  --color-primary-200: #80c0c0;
+  --color-primary-300: #4da7a7;
+  --color-primary-400: #1a8e8e;
+  --color-primary-500: #0d5a5a;  /* Main teal - #0d5a5a */
+  --color-primary-600: #0a4747;
+  --color-primary-700: #073535;
+  --color-primary-800: #052323;
+  --color-primary-900: #021111;
 
-  /* Colors - Secondary (Gold) */
-  --color-secondary-50: oklch(97% 0.03 85);
-  --color-secondary-100: oklch(93% 0.05 85);
-  --color-secondary-200: oklch(88% 0.08 85);
-  --color-secondary-300: oklch(82% 0.10 85);  /* Light gold */
-  --color-secondary-400: oklch(78% 0.11 85);
-  --color-secondary-500: oklch(75% 0.12 85);  /* Main gold */
-  --color-secondary-600: oklch(68% 0.11 85);
-  --color-secondary-700: oklch(60% 0.10 85);
-  --color-secondary-800: oklch(52% 0.09 85);
-  --color-secondary-900: oklch(44% 0.08 85);
+  /* Colors - Secondary (Gold) - New Palette */
+  --color-secondary-50: #f5f0e6;
+  --color-secondary-100: #e8dcc4;
+  --color-secondary-200: #dbc8a2;
+  --color-secondary-300: #ceb480;
+  --color-secondary-400: #c1a05e;
+  --color-secondary-500: #c9a961;  /* Main gold - #c9a961 */
+  --color-secondary-600: #a68a4f;
+  --color-secondary-700: #836b3d;
+  --color-secondary-800: #604c2b;
+  --color-secondary-900: #3d2d19;
 
   /* Colors - Neutral */
   --color-neutral-50: oklch(98% 0 0);
@@ -89,6 +89,14 @@
 :root {
   --background: #ffffff;
   --foreground: #2D2D2D;
+  
+  /* New ARISE Color Palette */
+  --teal: #0d5a5a;
+  --gold: #c9a961;
+  --dark-gray: #333333;
+  --light-gray: #e0e0e0;
+  --black: #1a1a1a;
+  --white: #FFFFFF;
 }
 
 body {

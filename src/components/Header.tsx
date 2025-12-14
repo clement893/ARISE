@@ -69,7 +69,7 @@ export default function Header() {
             </Link>
             <Link 
               href="/signup"
-              className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }))}
+              className={cn(buttonVariants({ variant: 'gold', size: 'sm' }))}
             >
               Get Started →
             </Link>
@@ -114,7 +114,7 @@ export default function Header() {
               </Link>
               <Link 
                 href="/signup"
-                className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'w-full text-center')}
+                className={cn(buttonVariants({ variant: 'gold', size: 'sm' }), 'w-full text-center')}
                 onClick={closeMenu}
               >
                 Get Started →

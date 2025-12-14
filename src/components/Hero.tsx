@@ -12,7 +12,7 @@ export default function Hero() {
       {/* Vertical lines pattern */}
       <div className="absolute inset-0 opacity-20" aria-hidden="true">
         <div className="h-full w-full" style={{
-          backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(255,255,255,0.1) 20px, rgba(255,255,255,0.1) 21px)',
+          backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 12px)',
         }} />
       </div>
 
@@ -39,7 +39,7 @@ export default function Hero() {
           {/* CTA Button */}
           <Link 
             href="/signup"
-            className={cn(buttonVariants({ variant: 'dark', size: 'lg' }), 'inline-flex items-center gap-2')}
+            className={cn(buttonVariants({ variant: 'white', size: 'lg' }), 'inline-flex items-center gap-2')}
           >
             Begin assessment
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

@@ -31,43 +31,45 @@ export default function FourDimensions() {
   ];
 
   return (
-    <section id="four-dimensions" className="bg-white py-12 sm:py-16 md:py-24">
+    <section id="four-dimensions" className="bg-[#0d5a5a] py-12 sm:py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
-          <span className="text-[#D4A84B] text-xs sm:text-sm font-semibold uppercase tracking-wider">
+          <span className="text-[#c9a961] text-xs sm:text-sm font-semibold uppercase tracking-[2px] block mb-3 sm:mb-4">
             THE METHODOLOGY
           </span>
-          <h2 className="mt-3 sm:mt-4 text-2xl sm:text-3xl md:text-4xl font-bold text-[#2D2D2D]">
-            Four dimensions,<br />
-            <span className="font-normal text-[#2D2D2D]/60">one unified profile</span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+            Four dimensions, one unified profile
           </h2>
         </div>
 
         {/* Dimensions list */}
-        <div className="space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+        <div className="space-y-6 sm:space-y-8 max-w-4xl mx-auto">
           {dimensions.map((dim, index) => (
             <div 
               key={index}
-              className="flex items-start gap-3 sm:gap-6 p-4 sm:p-6 rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex items-start gap-4 sm:gap-6 md:gap-8 border-l-4 border-[#c9a961] pl-6 sm:pl-8 md:pl-12 py-4"
             >
               {/* Number */}
               <div 
-                className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-white font-bold text-base sm:text-lg"
-                style={{ backgroundColor: dim.color }}
+                className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center font-bold text-xl sm:text-2xl"
+                style={{ 
+                  backgroundColor: '#0d7a7a',
+                  color: '#c9a961'
+                }}
               >
                 {dim.number}
               </div>
               
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
-                  <h3 className="text-lg sm:text-xl font-bold text-[#2D2D2D]">{dim.title}</h3>
-                  <span className="text-xs font-semibold text-[#2D2D2D]/50 uppercase tracking-wider">
-                    {dim.subtitle}
-                  </span>
-                </div>
-                <p className="text-sm sm:text-base text-[#2D2D2D]/70 leading-relaxed">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
+                  {dim.title}
+                </h3>
+                <span className="text-xs sm:text-sm font-semibold text-[#e0e0e0] uppercase tracking-[1px] block mb-2 sm:mb-3">
+                  {dim.subtitle}
+                </span>
+                <p className="text-sm sm:text-base text-white leading-relaxed">
                   {dim.description}
                 </p>
               </div>
@@ -75,14 +77,10 @@ export default function FourDimensions() {
           ))}
         </div>
 
-        {/* Integration banner */}
-        <div className="mt-8 sm:mt-12 md:mt-16 bg-[#0D5C5C] rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-12 text-center">
+        {/* Integration summary */}
+        <div className="mt-8 sm:mt-12 md:mt-16 bg-white/10 rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-12 text-center">
           <p className="text-white text-base sm:text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
-            All four assessments integrate <span className="font-bold">seamlessly</span><br />
-            to create your <span className="font-bold">comprehensive leadership profile</span>
-          </p>
-          <p className="text-white mt-4 text-sm">
-            A unified, actionable roadmap tailored specifically to you.
+            All four assessments integrate <strong className="text-[#c9a961] font-bold">seamlessly</strong> to create your comprehensive leadership profile
           </p>
         </div>
       </div>

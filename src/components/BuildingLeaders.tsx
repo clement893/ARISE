@@ -1,14 +1,14 @@
 export default function BuildingLeaders() {
   return (
-    <section className="bg-[#D4A84B] py-12 sm:py-16 md:py-24">
+    <section className="bg-white py-12 sm:py-16 md:py-24 border-[3px] border-dotted border-[#0d5a5a]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           {/* Left content */}
           <div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#2D2D2D] leading-tight mb-4 sm:mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#333333] leading-tight mb-4 sm:mb-6">
               Building<br />leaders
             </h2>
-            <p className="text-[#2D2D2D]/80 text-base sm:text-lg leading-relaxed">
+            <p className="text-[#333333] text-base sm:text-lg leading-relaxed">
               Our platform transcends traditional assessments, offering a holistic approach to leadership development by merging 
               modern psychometric frameworks with contemporary wellness practices.
             </p>

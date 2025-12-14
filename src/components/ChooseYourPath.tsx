@@ -47,17 +47,17 @@ export default function ChooseYourPath() {
   ];
 
   return (
-    <section className="bg-[#F5F5F5] py-16 md:py-24">
+    <section className="bg-white py-16 md:py-24 border-[3px] border-dotted border-[#0d5a5a]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-16">
           <span className="text-[#D4A84B] text-sm font-semibold uppercase tracking-wider">
             PRICING
           </span>
-          <h2 className="mt-4 text-3xl md:text-4xl font-bold text-[#2D2D2D]">
+          <h2 className="mt-4 text-3xl md:text-4xl font-bold text-[#333333]">
             Choose your path
           </h2>
-          <p className="mt-4 text-[#2D2D2D]/60 max-w-2xl mx-auto">
+          <p className="mt-4 text-[#333333] max-w-2xl mx-auto">
             Flexible options to support your leadership development journey
           </p>
         </div>
@@ -99,7 +99,7 @@ export default function ChooseYourPath() {
               {/* CTA */}
               <Link 
                 href={path.href}
-                className="mt-8 block text-center py-3 px-6 rounded-full text-sm font-semibold transition-colors bg-[#2D2D2D] hover:bg-[#1D1D1D] text-white"
+                className="mt-8 block text-center py-3 px-6 rounded-lg text-sm font-semibold transition-colors bg-[#c9a961] hover:bg-[#b89a52] text-[#333333]"
               >
                 {path.cta} →
               </Link>

@@ -22,9 +22,19 @@ export const buttonVariants = cva(
           'focus:ring-primary-500/50',
         ],
         secondary: [
-          'bg-secondary-500 text-primary-700',
+          'bg-secondary-500 text-dark-gray',
           'hover:bg-secondary-600',
           'focus:ring-secondary-500/50',
+        ],
+        gold: [
+          'bg-[#c9a961] text-[#333333]',
+          'hover:bg-[#b89a52]',
+          'focus:ring-[#c9a961]/50',
+        ],
+        white: [
+          'bg-white text-[#333333]',
+          'hover:bg-gray-100',
+          'focus:ring-white/50',
         ],
         outline: [
           'border-2 border-primary-500 text-primary-500 bg-transparent',
