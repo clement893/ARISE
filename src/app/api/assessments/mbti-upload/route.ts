@@ -644,6 +644,97 @@ If you cannot find a valid MBTI type, return "NOT_FOUND".`,
       }
 
       if (!extractedType || extractedType === 'NOT_FOUND') {
+        console.log('OpenAI Assistants API did not find MBTI type, trying Vision API as last resort...');
+        
+        // Last resort: Try Vision API to analyze PDF as image
+        // Note: OpenAI Vision API doesn't directly support PDFs, but we can try to use the file
+        // by converting it to base64 and sending as image
+        try {
+          console.log('Attempting Vision API extraction...');
+          const base64PDF = buffer.toString('base64');
+          
+          const visionResponse = await openai.chat.completions.create({
+            model: 'gpt-4o', // gpt-4o supports vision
+            messages: [
+              {
+                role: 'system',
+                content: `You are an expert at extracting MBTI personality types from documents. Your task is to find the MBTI personality type in the provided PDF document.
+
+The MBTI type is always a 4-letter code consisting of:
+- First letter: E (Extraversion) or I (Introversion)
+- Second letter: N (Intuition) or S (Sensing)
+- Third letter: F (Feeling) or T (Thinking)
+- Fourth letter: J (Judging) or P (Perceiving)
+
+Valid MBTI types are: ENFJ, ENFP, ENTJ, ENTP, ESFJ, ESFP, ESTJ, ESTP, INFJ, INFP, INTJ, INTP, ISFJ, ISFP, ISTJ, ISTP
+
+Look for:
+- "Your type is [TYPE]" or "Your type: [TYPE]"
+- "Personality type: [TYPE]" or "Personality Type: [TYPE]"
+- "MBTI type: [TYPE]" or "MBTI Type: [TYPE]"
+- "Your MBTI: [TYPE]"
+- "Adventurer (ISFP-T)" or "ISFP (Adventurer)" or similar formats
+- Any 4-letter code matching the pattern above, possibly with -T or -A suffix
+- Results sections, summary sections, or conclusion sections
+- Common personality type names: Adventurer, Architect, Advocate, Commander, Debater, Entertainer, Entrepreneur, Executive, Logician, Mediator, Protagonist, Virtuoso, Campaigner, Consul, Defender, Logistician
+
+IMPORTANT: Return ONLY the 4-letter MBTI type code in uppercase (e.g., "ISFP" not "ISFP-T"). Ignore any suffix like -T or -A.
+If you cannot find a valid MBTI type after thoroughly searching the document, return exactly "NOT_FOUND".`
+              },
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: `I need you to extract the MBTI personality type from this PDF document. 
+
+Please search through the entire document carefully. Look for:
+- Results sections or summary sections
+- Any mention of "MBTI", "personality type", "your type", "Adventurer", "Architect", "Advocate", "Commander", "Debater", "Entertainer", "Entrepreneur", "Executive", "Logician", "Mediator", "Protagonist", "Virtuoso", "Campaigner", "Consul", "Defender", "Logistician", or similar phrases
+- Any 4-letter code that matches the MBTI pattern (E/I, N/S, F/T, J/P)
+- The type may appear with a suffix like "-T" (Turbulent) or "-A" (Assertive), e.g., "ISFP-T" or "ENFJ-A"
+- Common formats: "ISFP-T", "Adventurer (ISFP-T)", "ISFP (Adventurer)", "Your type is ENFJ", "Personality Type: ENFJ"
+
+The MBTI type will be one of these 16 types (ignore the -T/-A suffix):
+ENFJ, ENFP, ENTJ, ENTP, ESFJ, ESFP, ESTJ, ESTP, INFJ, INFP, INTJ, INTP, ISFJ, ISFP, ISTJ, ISTP
+
+IMPORTANT: Return ONLY the 4-letter code in uppercase (e.g., "ISFP" not "ISFP-T"). Ignore any suffix like -T or -A.
+If you cannot find a valid MBTI type, return "NOT_FOUND".`
+                  },
+                  {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:application/pdf;base64,${base64PDF}`,
+                    }
+                  }
+                ]
+              }
+            ],
+            max_tokens: 10,
+          });
+
+          const visionText = visionResponse.choices[0]?.message?.content?.trim().toUpperCase() || '';
+          console.log('Vision API response:', visionText);
+
+          const validMBTITypes = [
+            'ENFJ', 'ENFP', 'ENTJ', 'ENTP',
+            'ESFJ', 'ESFP', 'ESTJ', 'ESTP',
+            'INFJ', 'INFP', 'INTJ', 'INTP',
+            'ISFJ', 'ISFP', 'ISTJ', 'ISTP'
+          ];
+
+          for (const type of validMBTITypes) {
+            if (visionText.includes(type)) {
+              console.log('Found MBTI type via Vision API:', type);
+              return type;
+            }
+          }
+
+          console.log('Vision API did not find MBTI type');
+        } catch (visionError: any) {
+          console.log('Vision API failed:', visionError.message);
+        }
+
         console.log('OpenAI Assistants API did not find MBTI type in the document');
         console.log('This could mean:');
         console.log('1. The PDF is a scanned image (requires OCR)');
