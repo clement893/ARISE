@@ -200,20 +200,21 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
 
       console.log('File uploaded, ID:', file.id);
 
-      // Wait for file to be processed
+      // Check file status - OpenAI Files API returns 'uploaded' or 'processed' or 'error'
+      // For PDFs, files are usually immediately available, but we check anyway
       let fileStatus = await openai.files.retrieve(file.id);
-      let waitAttempts = 0;
-      while (fileStatus.status === 'processing' && waitAttempts < 20) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        fileStatus = await openai.files.retrieve(file.id);
-        waitAttempts++;
-        console.log(`Waiting for file processing... attempt ${waitAttempts}/20`);
-      }
-
       console.log('File status:', fileStatus.status);
 
-      if (fileStatus.status !== 'processed') {
-        console.log('File processing failed or timed out');
+      // If file is not processed yet, wait a bit (though this is rare)
+      if (fileStatus.status === 'uploaded') {
+        // Wait a moment for processing (usually instant for PDFs)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        fileStatus = await openai.files.retrieve(file.id);
+        console.log('File status after wait:', fileStatus.status);
+      }
+
+      if (fileStatus.status === 'error') {
+        console.log('File upload failed');
         await openai.files.del(file.id);
         return null;
       }
