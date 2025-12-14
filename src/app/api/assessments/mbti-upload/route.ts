@@ -800,6 +800,136 @@ If you cannot find a valid MBTI type, return "NOT_FOUND".`
   }
 }
 
+async function extractMBTITypeWithOCR(buffer: Buffer): Promise<string | null> {
+  try {
+    console.log('Attempting OCR extraction with tesseract.js...');
+    
+    // Set up pdfjs worker
+    const pdfjsWorker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
+    
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument({ data: buffer });
+    const pdf = await loadingTask.promise;
+    console.log('PDF loaded for OCR, number of pages:', pdf.numPages);
+    
+    // Initialize Tesseract worker
+    const worker = await createWorker('eng');
+    await worker.setParameters({
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-() ',
+    });
+    
+    let allText = '';
+    const maxPages = Math.min(pdf.numPages, 5); // Limit to first 5 pages for performance
+    
+    // Process each page
+    for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+      try {
+        console.log(`Processing page ${pageNum}/${maxPages} with OCR...`);
+        const page = await pdf.getPage(pageNum);
+        
+        // Render page to canvas
+        const viewport = page.getViewport({ scale: 2.0 });
+        const { createCanvas } = await import('canvas');
+        const canvas = createCanvas(viewport.width, viewport.height);
+        const context = canvas.getContext('2d');
+        
+        await page.render({
+          canvasContext: context as any,
+          viewport: viewport,
+        }).promise;
+        
+        // Convert canvas to image buffer
+        const imageBuffer = canvas.toBuffer('image/png');
+        
+        // Perform OCR on the image
+        const { data: { text } } = await worker.recognize(imageBuffer);
+        allText += text + ' ';
+        
+        console.log(`Page ${pageNum} OCR extracted ${text.length} characters`);
+      } catch (pageError: any) {
+        console.log(`Error processing page ${pageNum}:`, pageError.message);
+        continue;
+      }
+    }
+    
+    await worker.terminate();
+    
+    if (allText.length < 50) {
+      console.log('OCR extraction: Text too short, OCR may have failed');
+      return null;
+    }
+    
+    console.log('OCR extraction: Total text length:', allText.length);
+    console.log('OCR extraction: First 500 characters:', allText.substring(0, 500));
+    
+    // Now search for MBTI type in the OCR text
+    const validMBTITypes = [
+      'ENFJ', 'ENFP', 'ENTJ', 'ENTP',
+      'ESFJ', 'ESFP', 'ESTJ', 'ESTP',
+      'INFJ', 'INFP', 'INTJ', 'INTP',
+      'ISFJ', 'ISFP', 'ISTJ', 'ISTP'
+    ];
+
+    const mbtiPatterns = [
+      // Pattern for "Adventurer (ISFP-T)" - most common in 16personalities
+      /(?:Adventurer|Architect|Advocate|Commander|Debater|Entertainer|Entrepreneur|Executive|Logician|Mediator|Protagonist|Virtuoso|Campaigner|Consul|Defender|Logistician)\s*\(([EI][NS][FT][JP])[- ]?[TA]?\)/i,
+      // Pattern: "ISFP-T" or "ISFP-A" (with optional suffix, standalone)
+      /\b([EI][NS][FT][JP])[- ]?[TA]\b/i,
+      // Pattern: "ISFP (Adventurer)" - reversed format
+      /\b([EI][NS][FT][JP])[- ]?[TA]?\s*\([^)]+\)/i,
+      // Pattern with parentheses: "(ISFP-T)" or "(ISFP)"
+      /\(([EI][NS][FT][JP])[- ]?[TA]?\)/i,
+      // Pattern with type label: "Your type is ISFP-T" or "Personality type: ISFP"
+      /(?:type|personality|mbti|your\s+type|personality\s+type)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
+      // Pattern: "Your type is ENFJ" or "Personality type: ENFJ"
+      /(?:you\s+are|your\s+type\s+is|personality\s+type|your\s+personality)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
+      // Pattern: "result: ISFP" or "outcome: ENFJ"
+      /(?:result|outcome)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
+      // Pattern: "ISFP-T - Adventurer" format
+      /\b([EI][NS][FT][JP])[- ]?[TA]?\s*[-–]\s*[A-Za-z]+/i,
+    ];
+
+    // Check if text contains key words that suggest MBTI content
+    const hasMBTIKeywords = /(?:mbti|personality|adventurer|architect|advocate|commander|debater|entertainer|entrepreneur|executive|logician|mediator|protagonist|virtuoso|campaigner|consul|defender|logistician)/i.test(allText);
+    console.log('OCR extraction: Contains MBTI keywords:', hasMBTIKeywords);
+    
+    // Check if text contains any MBTI-like patterns
+    const hasMBTIPattern = /[EI][NS][FT][JP][- ]?[TA]?/i.test(allText);
+    console.log('OCR extraction: Contains MBTI pattern:', hasMBTIPattern);
+
+    // First, try to find exact matches with context (more reliable)
+    for (let i = 0; i < mbtiPatterns.length; i++) {
+      const pattern = mbtiPatterns[i];
+      const matches = allText.match(pattern);
+      if (matches && matches[1]) {
+        const foundType = matches[1].toUpperCase();
+        console.log(`OCR extraction: Pattern ${i} matched:`, matches[0], '-> extracted type:', foundType);
+        if (validMBTITypes.includes(foundType)) {
+          console.log('OCR extraction: found MBTI type with pattern:', foundType);
+          return foundType;
+        }
+      }
+    }
+
+    // If no contextual match, search for any valid MBTI type in the text
+    for (const type of validMBTITypes) {
+      const regex = new RegExp(`\\b${type}[- ]?[TA]?\\b`, 'i');
+      const match = allText.match(regex);
+      if (match) {
+        console.log('OCR extraction: found MBTI type without context:', type, 'matched:', match[0]);
+        return type;
+      }
+    }
+
+    console.log('OCR extraction: no MBTI type found in OCR text');
+    return null;
+  } catch (error: any) {
+    console.error('Error in OCR extraction:', error.message);
+    return null;
+  }
+}
+
 async function extractMBTITypeWithAIText(buffer: Buffer): Promise<string | null> {
   try {
     const openaiApiKey = process.env.OPENAI_API_KEY;
