@@ -178,42 +178,23 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       return textResult;
     }
     
-    console.log('Text-based AI extraction failed, trying Files API with Chat Completions...');
+    console.log('Text-based AI extraction failed, trying base64 PDF with Chat Completions...');
 
-    // If text extraction fails, try using OpenAI Files API with Chat Completions
-    // This is simpler and faster than Assistants API
+    // If text extraction fails, try using base64 encoding with Chat Completions
+    // This is simpler and works directly with vision-capable models
     const openai = new OpenAI({
       apiKey: openaiApiKey,
     });
 
-    let file: any = null;
-
     try {
-      // Upload the file to OpenAI Files API
-      console.log('Uploading PDF to OpenAI Files API...');
-      // Convert Buffer to Uint8Array for Blob/File constructor compatibility
-      const uint8Array = new Uint8Array(buffer);
-      const blob = new Blob([uint8Array], { type: 'application/pdf' });
-      file = await openai.files.create({
-        file: new File([blob], 'mbti-result.pdf', { type: 'application/pdf' }),
-        purpose: 'assistants',
-      });
+      // Convert PDF buffer to base64
+      const base64PDF = buffer.toString('base64');
+      const dataUrl = `data:application/pdf;base64,${base64PDF}`;
 
-      console.log('File uploaded, ID:', file.id);
+      console.log('Using base64 PDF with Chat Completions API...');
 
-      // Wait for file to be processed (optional, but recommended)
-      let fileStatus = await openai.files.retrieve(file.id);
-      let waitAttempts = 0;
-      while (fileStatus.status === 'processing' && waitAttempts < 10) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        fileStatus = await openai.files.retrieve(file.id);
-        waitAttempts++;
-      }
-
-      console.log('File status:', fileStatus.status);
-
-      // Use Chat Completions API with the file
-      // For PDFs, we can use the file_id in the message content
+      // Use Chat Completions API with base64 PDF
+      // GPT-4o and GPT-4o-mini support PDFs via base64
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -229,8 +210,10 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
                 text: 'Please extract the MBTI personality type from this PDF document. Look for phrases like "Your type is", "Personality type", "MBTI type", or any mention of a 4-letter code like ENFJ, INFP, etc. Return ONLY the 4-letter code in uppercase.',
               },
               {
-                type: 'file',
-                file_id: file.id,
+                type: 'image_url',
+                image_url: {
+                  url: dataUrl,
+                }
               }
             ],
           }
@@ -239,17 +222,10 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       });
 
       const extractedType = response.choices[0]?.message?.content?.trim().toUpperCase();
-      console.log('OpenAI Files API response:', extractedType);
-
-      // Clean up file
-      try {
-        await openai.files.del(file.id);
-      } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
-      }
+      console.log('OpenAI Chat Completions API response:', extractedType);
 
       if (!extractedType || extractedType === 'NOT_FOUND') {
-        console.log('OpenAI Files API did not find MBTI type');
+        console.log('OpenAI Chat Completions API did not find MBTI type');
         return null;
       }
 
@@ -262,7 +238,7 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       ];
 
       if (validMBTITypes.includes(extractedType)) {
-        console.log(`AI Files API successfully extracted MBTI type: ${extractedType}`);
+        console.log(`AI Chat Completions API successfully extracted MBTI type: ${extractedType}`);
         return extractedType;
       }
 
@@ -274,17 +250,11 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
         }
       }
 
-      console.log('OpenAI Files API returned invalid MBTI type:', extractedType);
+      console.log('OpenAI Chat Completions API returned invalid MBTI type:', extractedType);
       return null;
     } catch (error: any) {
-      console.error('Error extracting MBTI type with AI Files API:', error.message);
+      console.error('Error extracting MBTI type with AI Chat Completions API:', error.message);
       console.error('Error details:', error);
-      // Try to clean up file if it exists
-      try {
-        if (file?.id) await openai.files.del(file.id);
-      } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
-      }
       return null;
     }
   } catch (error: any) {
