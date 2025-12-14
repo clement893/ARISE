@@ -262,7 +262,7 @@ export default function ResultsPage() {
   ];
 
   // MBTI data - only if completed
-  const mbtiData = hasMBTI ? assessmentResults.mbti : null;
+  const mbtiData = assessmentResults?.mbti || null;
 
   return (
     <main className="flex-1 lg:ml-0 p-4 sm:p-6 lg:p-8 overflow-auto">
@@ -487,7 +487,7 @@ export default function ResultsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-gray-600 mb-1">Your MBTI Personality Type</p>
-                          <p className="text-2xl font-bold text-primary-700">{hasMBTI}</p>
+                          <p className="text-2xl font-bold text-primary-700">{mbtiData?.dominantResult || hasMBTI}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-gray-500">Completed</p>
