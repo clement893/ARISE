@@ -120,17 +120,11 @@ async function extractMBTITypeWithOCR(buffer: Buffer): Promise<string | null> {
     // Dynamically import pdfjs-dist to avoid build-time issues
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Set up pdfjs worker (use CDN or local worker)
-    // For Node.js, we can use the built-in worker or skip it
-    if (typeof pdfjsLib.GlobalWorkerOptions !== 'undefined') {
-      // Try to set worker source - may not be needed in Node.js environment
-      try {
-        const workerUrl = await import('pdfjs-dist/build/pdf.worker.mjs?url');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl.default;
-      } catch (e) {
-        // Worker setup may fail in Node.js, continue without it
-        console.log('Worker setup skipped (Node.js environment)');
-      }
+    // Set up pdfjs worker for Node.js environment
+    // In Node.js, we can disable the worker or use a CDN URL
+    if (pdfjsLib.GlobalWorkerOptions) {
+      // Disable worker for Node.js (not needed for server-side rendering)
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '';
     }
     
     // Load the PDF document
