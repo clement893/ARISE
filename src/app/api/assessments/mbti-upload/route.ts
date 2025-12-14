@@ -97,15 +97,38 @@ export async function POST(request: NextRequest) {
 async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
   try {
     // Extract text from PDF using direct UTF-8 conversion
-    // This works for most PDFs that contain text (not scanned images)
+    // This works for some PDFs that contain text (not scanned images)
+    // Note: This is a basic approach. For complex PDFs, a proper PDF parser is needed.
     let text = '';
     
     try {
       text = buffer.toString('utf-8');
       console.log('Basic extraction: extracted text length:', text.length);
+      
+      // Check if this looks like raw PDF binary data (starts with %PDF)
+      if (text.startsWith('%PDF')) {
+        // Try to extract readable text from PDF structure
+        // Look for text objects in PDF format: (text) or [text] or /Text
+        // This is a simplified extraction - for better results, use a PDF parser library
+        const textMatches = text.match(/\((.*?)\)/g) || [];
+        const bracketMatches = text.match(/\[(.*?)\]/g) || [];
+        const readableText = [...textMatches, ...bracketMatches]
+          .map(match => match.replace(/[()\[\]]/g, ''))
+          .filter(t => t.length > 0 && /[A-Za-z]/.test(t))
+          .join(' ');
+        
+        if (readableText.length > 50) {
+          text = readableText;
+          console.log('Basic extraction: extracted readable text length:', text.length);
+        } else {
+          console.log('Basic extraction: PDF appears to be binary or scanned, readable text too short');
+          return null;
+        }
+      }
+      
       if (text.length < 100) {
         console.log('Basic extraction: text is very short, PDF might be binary or scanned');
-        console.log('First 200 chars:', text.substring(0, 200));
+        return null;
       }
     } catch (e) {
       console.error('Error converting PDF buffer to text:', e);
@@ -220,12 +243,46 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       }
 
       // Use Assistants API with file_search to extract MBTI type
-      // This is the correct way to process PDFs with OpenAI
+      // Create a vector store and add the file to it
+      const vectorStore = await openai.beta.vectorStores.create({
+        name: 'MBTI PDF Extractor',
+      });
+
+      // Add file to vector store
+      await openai.beta.vectorStores.files.create(vectorStore.id, {
+        file_id: file.id,
+      });
+
+      // Wait for file to be processed in vector store
+      let vectorStoreFileStatus = await openai.beta.vectorStores.files.retrieve(vectorStore.id, file.id);
+      let vectorWaitAttempts = 0;
+      while (vectorStoreFileStatus.status !== 'completed' && vectorStoreFileStatus.status !== 'failed' && vectorWaitAttempts < 30) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        vectorStoreFileStatus = await openai.beta.vectorStores.files.retrieve(vectorStore.id, file.id);
+        vectorWaitAttempts++;
+        if (vectorWaitAttempts % 5 === 0) {
+          console.log(`Waiting for vector store file processing... attempt ${vectorWaitAttempts}/30, status: ${vectorStoreFileStatus.status}`);
+        }
+      }
+
+      if (vectorStoreFileStatus.status === 'failed') {
+        console.log('Vector store file processing failed');
+        await openai.beta.vectorStores.del(vectorStore.id);
+        await openai.files.del(file.id);
+        return null;
+      }
+
+      // Create assistant with vector store
       const assistant = await openai.beta.assistants.create({
         name: 'MBTI Extractor',
         instructions: 'You are an expert at extracting MBTI personality types from documents. Extract the MBTI personality type (one of: ENFJ, ENFP, ENTJ, ENTP, ESFJ, ESFP, ESTJ, ESTP, INFJ, INFP, INTJ, INTP, ISFJ, ISFP, ISTJ, ISTP) from the provided document. Return ONLY the 4-letter MBTI type code in uppercase, nothing else. If you cannot find a valid MBTI type, return "NOT_FOUND".',
         model: 'gpt-4o-mini',
         tools: [{ type: 'file_search' }],
+        tool_resources: {
+          file_search: {
+            vector_store_ids: [vectorStore.id],
+          },
+        },
       });
 
       const thread = await openai.beta.threads.create({
@@ -233,12 +290,6 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
           {
             role: 'user',
             content: 'Please extract the MBTI personality type from this PDF document. Look for phrases like "Your type is", "Personality type", "MBTI type", or any mention of a 4-letter code like ENFJ, INFP, etc. Return ONLY the 4-letter code in uppercase.',
-            attachments: [
-              {
-                file_id: file.id,
-                tools: [{ type: 'file_search' }],
-              },
-            ],
           },
         ],
       });
@@ -265,8 +316,21 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
           console.log('Run failed with error:', runStatus.last_error);
         }
         // Clean up
-        await openai.files.del(file.id);
-        await openai.beta.assistants.del(assistant.id);
+        try {
+          await openai.beta.assistants.del(assistant.id);
+        } catch (e) {
+          console.log('Error cleaning up assistant:', e);
+        }
+        try {
+          await openai.beta.vectorStores.del(vectorStore.id);
+        } catch (e) {
+          console.log('Error cleaning up vector store:', e);
+        }
+        try {
+          await openai.files.del(file.id);
+        } catch (e) {
+          console.log('Error cleaning up file:', e);
+        }
         return null;
       }
 
@@ -282,17 +346,24 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
         }
       }
 
-      // Clean up resources
-      await openai.files.del(file.id);
-      await openai.beta.assistants.del(assistant.id);
-
       console.log('OpenAI Assistants API response:', extractedType);
 
-      // Clean up file
+      // Clean up resources
+      try {
+        await openai.beta.assistants.del(assistant.id);
+      } catch (cleanupError) {
+        console.log('Error cleaning up assistant:', cleanupError);
+      }
+      try {
+        await openai.beta.vectorStores.del(vectorStore.id);
+      } catch (cleanupError) {
+        console.log('Error cleaning up vector store:', cleanupError);
+      }
       try {
         await openai.files.del(file.id);
       } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
+        // File might already be deleted, ignore error
+        console.log('File cleanup note (may already be deleted):', cleanupError);
       }
 
       if (!extractedType || extractedType === 'NOT_FOUND') {
@@ -326,11 +397,14 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
     } catch (error: any) {
       console.error('Error extracting MBTI type with AI Chat Completions API:', error.message);
       console.error('Error details:', error);
-      // Try to clean up file if it exists
+      // Try to clean up resources if they exist
       try {
-        if (file?.id) await openai.files.del(file.id);
+        if (file?.id) {
+          await openai.files.del(file.id);
+        }
       } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
+        // File might already be deleted, ignore error
+        console.log('File cleanup note (may already be deleted):', cleanupError);
       }
       return null;
     }
