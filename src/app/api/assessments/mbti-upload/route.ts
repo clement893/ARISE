@@ -241,11 +241,34 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
       /\b([EI][NS][FT][JP])[- ]?[TA]?\s*[-–]\s*[A-Za-z]+/i,
     ];
 
+    // Debug: Show sample of extracted text
+    console.log('Basic extraction: Sample of extracted text (first 2000 chars):', text.substring(0, 2000));
+    console.log('Basic extraction: Sample of extracted text (last 1000 chars):', text.substring(Math.max(0, text.length - 1000)));
+    
+    // Check if text contains key words that suggest MBTI content
+    const hasMBTIKeywords = /(?:mbti|personality|adventurer|architect|advocate|commander|debater|entertainer|entrepreneur|executive|logician|mediator|protagonist|virtuoso|campaigner|consul|defender|logistician)/i.test(text);
+    console.log('Basic extraction: Contains MBTI keywords:', hasMBTIKeywords);
+    
+    // Check if text contains any MBTI-like patterns
+    const hasMBTIPattern = /[EI][NS][FT][JP][- ]?[TA]?/i.test(text);
+    console.log('Basic extraction: Contains MBTI pattern:', hasMBTIPattern);
+    
+    if (hasMBTIPattern) {
+      console.log('Basic extraction: Found MBTI-like pattern, searching...');
+      // Try to find the actual pattern
+      const patternMatch = text.match(/[EI][NS][FT][JP][- ]?[TA]?/i);
+      if (patternMatch) {
+        console.log('Basic extraction: Pattern match found:', patternMatch[0]);
+      }
+    }
+
     // First, try to find exact matches with context (more reliable)
-    for (const pattern of mbtiPatterns) {
+    for (let i = 0; i < mbtiPatterns.length; i++) {
+      const pattern = mbtiPatterns[i];
       const matches = text.match(pattern);
       if (matches && matches[1]) {
         const foundType = matches[1].toUpperCase();
+        console.log(`Basic extraction: Pattern ${i} matched:`, matches[0], '-> extracted type:', foundType);
         if (validMBTITypes.includes(foundType)) {
           console.log('Basic extraction: found MBTI type with pattern:', foundType);
           return foundType;
@@ -260,12 +283,15 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
       const regex = new RegExp(`\\b${type}[- ]?[TA]?\\b`, 'i');
       const match = text.match(regex);
       if (match) {
-        console.log('Basic extraction: found MBTI type without context:', type);
+        console.log('Basic extraction: found MBTI type without context:', type, 'matched:', match[0]);
         return type;
       }
     }
 
     console.log('Basic extraction: no MBTI type found in PDF text');
+    console.log('Basic extraction: Text length:', text.length);
+    console.log('Basic extraction: Text contains "ISFP":', text.includes('ISFP') || text.includes('isfp'));
+    console.log('Basic extraction: Text contains "Adventurer":', text.includes('Adventurer') || text.includes('adventurer'));
     return null;
   } catch (error) {
     console.error('Error extracting MBTI type from PDF:', error);
