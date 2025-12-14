@@ -333,6 +333,9 @@ export default function ResultsPage() {
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
             {leaderProfile.map((item, index) => {
               const getClickHandler = () => {
+                if (item.label === 'MBTI' && hasMBTI) {
+                  return () => router.push('/dashboard/results/mbti');
+                }
                 if (item.label === 'TKI Dominant' && hasTKI) {
                   return () => router.push('/dashboard/results/tki');
                 }
