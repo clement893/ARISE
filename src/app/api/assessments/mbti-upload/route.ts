@@ -243,36 +243,7 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       }
 
       // Use Assistants API with file_search to extract MBTI type
-      // Create a vector store and add the file to it
-      const vectorStore = await openai.beta.vectorStores.create({
-        name: 'MBTI PDF Extractor',
-      });
-
-      // Add file to vector store
-      await openai.beta.vectorStores.files.create(vectorStore.id, {
-        file_id: file.id,
-      });
-
-      // Wait for file to be processed in vector store
-      let vectorStoreFileStatus = await openai.beta.vectorStores.files.retrieve(vectorStore.id, file.id);
-      let vectorWaitAttempts = 0;
-      while (vectorStoreFileStatus.status !== 'completed' && vectorStoreFileStatus.status !== 'failed' && vectorWaitAttempts < 30) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        vectorStoreFileStatus = await openai.beta.vectorStores.files.retrieve(vectorStore.id, file.id);
-        vectorWaitAttempts++;
-        if (vectorWaitAttempts % 5 === 0) {
-          console.log(`Waiting for vector store file processing... attempt ${vectorWaitAttempts}/30, status: ${vectorStoreFileStatus.status}`);
-        }
-      }
-
-      if (vectorStoreFileStatus.status === 'failed') {
-        console.log('Vector store file processing failed');
-        await openai.beta.vectorStores.del(vectorStore.id);
-        await openai.files.del(file.id);
-        return null;
-      }
-
-      // Create assistant with vector store
+      // Create assistant with file_search capability
       const assistant = await openai.beta.assistants.create({
         name: 'MBTI Extractor',
         instructions: 'You are an expert at extracting MBTI personality types from documents. Extract the MBTI personality type (one of: ENFJ, ENFP, ENTJ, ENTP, ESFJ, ESFP, ESTJ, ESTP, INFJ, INFP, INTJ, INTP, ISFJ, ISFP, ISTJ, ISTP) from the provided document. Return ONLY the 4-letter MBTI type code in uppercase, nothing else. If you cannot find a valid MBTI type, return "NOT_FOUND".',
@@ -280,16 +251,23 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
         tools: [{ type: 'file_search' }],
         tool_resources: {
           file_search: {
-            vector_store_ids: [vectorStore.id],
+            vector_store_ids: [],
           },
         },
       });
 
+      // Create thread with file attached
       const thread = await openai.beta.threads.create({
         messages: [
           {
             role: 'user',
             content: 'Please extract the MBTI personality type from this PDF document. Look for phrases like "Your type is", "Personality type", "MBTI type", or any mention of a 4-letter code like ENFJ, INFP, etc. Return ONLY the 4-letter code in uppercase.',
+            attachments: [
+              {
+                file_id: file.id,
+                tools: [{ type: 'file_search' }],
+              },
+            ],
           },
         ],
       });
@@ -322,11 +300,6 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
           console.log('Error cleaning up assistant:', e);
         }
         try {
-          await openai.beta.vectorStores.del(vectorStore.id);
-        } catch (e) {
-          console.log('Error cleaning up vector store:', e);
-        }
-        try {
           await openai.files.del(file.id);
         } catch (e) {
           console.log('Error cleaning up file:', e);
@@ -353,11 +326,6 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
         await openai.beta.assistants.del(assistant.id);
       } catch (cleanupError) {
         console.log('Error cleaning up assistant:', cleanupError);
-      }
-      try {
-        await openai.beta.vectorStores.del(vectorStore.id);
-      } catch (cleanupError) {
-        console.log('Error cleaning up vector store:', cleanupError);
       }
       try {
         await openai.files.del(file.id);
