@@ -51,7 +51,15 @@ export async function authenticatedFetch(
   // Helper function to create request options with token
   const createRequestOptions = (token: string | null): RequestInit => {
     const headers = new Headers(options.headers);
-    headers.set('Content-Type', 'application/json');
+    
+    // Don't set Content-Type for FormData - browser will set it automatically with boundary
+    if (!(options.body instanceof FormData)) {
+      // Only set Content-Type if not already set and body is not FormData
+      if (!headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
+    }
+    
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }

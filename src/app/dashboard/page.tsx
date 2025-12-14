@@ -96,12 +96,9 @@ export default function DashboardPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const accessToken = localStorage.getItem('arise_access_token');
-      const response = await fetch('/api/assessments/mbti-upload', {
+      const { authenticatedFetch } = await import('@/lib/token-refresh');
+      const response = await authenticatedFetch('/api/assessments/mbti-upload', {
         method: 'POST',
-        headers: {
-          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-        },
         body: formData,
       });
 
