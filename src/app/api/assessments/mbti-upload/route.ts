@@ -178,21 +178,18 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       return textResult;
     }
     
-    console.log('Text-based AI extraction failed, trying Files/Assistants API...');
+    console.log('Text-based AI extraction failed, trying Files API with Chat Completions...');
 
-    // If text extraction fails, try using OpenAI Files API
-    // Note: OpenAI Vision API doesn't support PDFs directly, so we'll use Files/Assistants API
+    // If text extraction fails, try using OpenAI Files API with Chat Completions
+    // This is simpler and faster than Assistants API
     const openai = new OpenAI({
       apiKey: openaiApiKey,
     });
 
     let file: any = null;
-    let assistant: any = null;
-    let thread: any = null;
 
     try {
-      // Try using OpenAI Files API to extract text from PDF
-      // First, upload the file
+      // Upload the file to OpenAI Files API
       console.log('Uploading PDF to OpenAI Files API...');
       // Convert Buffer to Uint8Array for Blob/File constructor compatibility
       const uint8Array = new Uint8Array(buffer);
@@ -204,70 +201,51 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
 
       console.log('File uploaded, ID:', file.id);
 
-      // Use Assistants API with file search to extract MBTI type
-      assistant = await openai.beta.assistants.create({
-        name: 'MBTI Extractor',
-        instructions: 'You are an expert at extracting MBTI personality types from documents. Extract the MBTI personality type (one of: ENFJ, ENFP, ENTJ, ENTP, ESFJ, ESFP, ESTJ, ESTP, INFJ, INFP, INTJ, INTP, ISFJ, ISFP, ISTJ, ISTP) from the provided document. Return ONLY the 4-letter MBTI type code in uppercase, nothing else. If you cannot find a valid MBTI type, return "NOT_FOUND".',
-        model: 'gpt-4o-mini',
-        tools: [{ type: 'file_search' }],
-      });
+      // Wait for file to be processed (optional, but recommended)
+      let fileStatus = await openai.files.retrieve(file.id);
+      let waitAttempts = 0;
+      while (fileStatus.status === 'processing' && waitAttempts < 10) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        fileStatus = await openai.files.retrieve(file.id);
+        waitAttempts++;
+      }
 
-      thread = await openai.beta.threads.create({
+      console.log('File status:', fileStatus.status);
+
+      // Use Chat Completions API with the file
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
         messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at extracting MBTI personality types from documents. Extract the MBTI personality type (one of: ENFJ, ENFP, ENTJ, ENTP, ESFJ, ESFP, ESTJ, ESTP, INFJ, INFP, INTJ, INTP, ISFJ, ISFP, ISTJ, ISTP) from the provided document. Return ONLY the 4-letter MBTI type code in uppercase, nothing else. If you cannot find a valid MBTI type, return "NOT_FOUND".'
+          },
           {
             role: 'user',
             content: 'Please extract the MBTI personality type from this PDF document. Look for phrases like "Your type is", "Personality type", "MBTI type", or any mention of a 4-letter code like ENFJ, INFP, etc. Return ONLY the 4-letter code in uppercase.',
-            attachments: [
-              {
-                file_id: file.id,
-                tools: [{ type: 'file_search' }],
-              },
-            ],
-          },
+          }
         ],
+        attachments: [
+          {
+            file_id: file.id,
+            tools: [{ type: 'file_search' }],
+          }
+        ],
+        max_tokens: 10,
       });
 
-      const run = await openai.beta.threads.runs.create(thread.id, {
-        assistant_id: assistant.id,
-      });
+      const extractedType = response.choices[0]?.message?.content?.trim().toUpperCase();
+      console.log('OpenAI Files API response:', extractedType);
 
-      // Wait for completion
-      let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-      let attempts = 0;
-      while (runStatus.status !== 'completed' && runStatus.status !== 'failed' && attempts < 30) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-        attempts++;
+      // Clean up file
+      try {
+        await openai.files.del(file.id);
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
       }
-
-      if (runStatus.status !== 'completed') {
-        console.log('OpenAI Assistants API run did not complete, status:', runStatus.status);
-        if (runStatus.status === 'failed') {
-          console.log('Run failed with error:', runStatus.last_error);
-        }
-        return null;
-      }
-
-      // Get the response
-      const messages = await openai.beta.threads.messages.list(thread.id);
-      const lastMessage = messages.data[0];
-      let extractedType = null;
-      
-      if (lastMessage.content && lastMessage.content.length > 0) {
-        const content = lastMessage.content[0];
-        if (content.type === 'text') {
-          extractedType = content.text.value.trim().toUpperCase();
-        }
-      }
-
-      // Clean up files and assistant
-      await openai.files.del(file.id);
-      await openai.beta.assistants.del(assistant.id);
-
-      console.log('OpenAI Assistants API response:', extractedType);
 
       if (!extractedType || extractedType === 'NOT_FOUND') {
-        console.log('OpenAI Assistants API did not find MBTI type');
+        console.log('OpenAI Files API did not find MBTI type');
         return null;
       }
 
@@ -280,7 +258,7 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       ];
 
       if (validMBTITypes.includes(extractedType)) {
-        console.log(`AI Assistants API successfully extracted MBTI type: ${extractedType}`);
+        console.log(`AI Files API successfully extracted MBTI type: ${extractedType}`);
         return extractedType;
       }
 
@@ -292,17 +270,16 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
         }
       }
 
-      console.log('OpenAI Assistants API returned invalid MBTI type:', extractedType);
+      console.log('OpenAI Files API returned invalid MBTI type:', extractedType);
       return null;
     } catch (error: any) {
-      console.error('Error extracting MBTI type with AI Assistants API:', error.message);
+      console.error('Error extracting MBTI type with AI Files API:', error.message);
       console.error('Error details:', error);
-      // Try to clean up resources if they exist
+      // Try to clean up file if it exists
       try {
         if (file?.id) await openai.files.del(file.id);
-        if (assistant?.id) await openai.beta.assistants.del(assistant.id);
       } catch (cleanupError) {
-        console.error('Error cleaning up resources:', cleanupError);
+        console.error('Error cleaning up file:', cleanupError);
       }
       return null;
     }
