@@ -28,8 +28,6 @@ export default function ResultsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAssessments = useCallback(async (userId: number) => {
-    // Prevent multiple simultaneous calls
-    if (loading) return;
     try {
       console.log('Fetching assessments for user:', userId);
       
@@ -42,7 +40,9 @@ export default function ResultsPage() {
         const data = await response.json();
         console.log('Assessment data received:', data);
         console.log('TKI data:', data.summary?.tki);
+        console.log('MBTI data:', data.summary?.mbti);
         console.log('TKI dominantResult:', data.summary?.tki?.dominantResult);
+        console.log('MBTI dominantResult:', data.summary?.mbti?.dominantResult);
         console.log('Full summary:', JSON.stringify(data.summary, null, 2));
         setAssessmentResults(data.summary || null);
       } else {
@@ -54,7 +54,7 @@ export default function ResultsPage() {
       console.error('Failed to fetch assessments:', error);
       setAssessmentResults(null);
     }
-  }, [loading]);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -204,9 +204,12 @@ export default function ResultsPage() {
 
       if (response.ok) {
         alert(`Successfully imported MBTI type: ${data.mbtiType}`);
-        // Refresh assessment results
+        // Refresh assessment results - force refresh by setting loading to false first
         if (user) {
+          console.log('Refreshing assessments after MBTI upload...');
           await fetchAssessments(user.id);
+          // Also trigger a re-render by updating refreshKey
+          setRefreshKey(prev => prev + 1);
         }
       } else {
         console.error('Upload failed with status:', response.status);
