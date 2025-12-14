@@ -153,7 +153,7 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
       return null;
     }
 
-    // Valid MBTI types
+    // Valid MBTI types (4 letters only, without -T/-A suffix)
     const validMBTITypes = [
       'ENFJ', 'ENFP', 'ENTJ', 'ENTP',
       'ESFJ', 'ESFP', 'ESTJ', 'ESTP',
@@ -162,11 +162,23 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     ];
 
     // Look for MBTI type patterns in the PDF text
-    // Common patterns: "ENFJ", "Your type is ENFJ", "Personality type: ENFJ", etc.
+    // Common patterns: 
+    // - "ISFP-T", "ISFP-A" (with suffix)
+    // - "Adventurer (ISFP-T)"
+    // - "ISFP (Adventurer)"
+    // - "Your type is ENFJ"
+    // - "Personality type: ENFJ"
     const mbtiPatterns = [
-      /(?:type|personality|mbti)[\s:]*([EI][NS][FT][JP])/i,
-      /(?:you are|your type is|personality type|your personality)[\s:]*([EI][NS][FT][JP])/i,
-      /(?:result|outcome)[\s:]*([EI][NS][FT][JP])/i,
+      // Pattern for "ISFP-T" or "ISFP-A" (with optional suffix)
+      /\b([EI][NS][FT][JP])[- ]?[TA]?\b/i,
+      // Pattern with context: "Adventurer (ISFP-T)" or "ISFP (Adventurer)"
+      /(?:\(|\()\s*([EI][NS][FT][JP])[- ]?[TA]?\s*(?:\)|\))/i,
+      // Pattern with type label: "Your type is ISFP-T"
+      /(?:type|personality|mbti)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
+      // Pattern: "Your type is ENFJ" or "Personality type: ENFJ"
+      /(?:you are|your type is|personality type|your personality)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
+      // Pattern: "result: ISFP" or "outcome: ENFJ"
+      /(?:result|outcome)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
     ];
 
     // First, try to find exact matches with context (more reliable)
@@ -182,10 +194,12 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     }
 
     // If no contextual match, search for any valid MBTI type in the text
-    // Use word boundaries to avoid partial matches
+    // This will match "ISFP-T" as "ISFP" due to word boundary
     for (const type of validMBTITypes) {
-      const regex = new RegExp(`\\b${type}\\b`, 'i');
-      if (regex.test(text)) {
+      // Match type with optional -T or -A suffix
+      const regex = new RegExp(`\\b${type}[- ]?[TA]?\\b`, 'i');
+      const match = text.match(regex);
+      if (match) {
         console.log('Basic extraction: found MBTI type without context:', type);
         return type;
       }
@@ -312,20 +326,22 @@ IMPORTANT: Return ONLY the 4-letter MBTI type code in uppercase (e.g., "ENFJ" or
       // Create thread with file attached
       const thread = await openai.beta.threads.create({
         messages: [
-          {
-            role: 'user',
-            content: `I need you to extract the MBTI personality type from this PDF document. 
+        {
+          role: 'user',
+          content: `I need you to extract the MBTI personality type from this PDF document. 
 
 Please search through the entire document carefully. Look for:
-- Results sections
-- Summary sections
-- Any mention of "MBTI", "personality type", "your type", or similar phrases
+- Results sections or summary sections
+- Any mention of "MBTI", "personality type", "your type", "Adventurer", or similar phrases
 - Any 4-letter code that matches the MBTI pattern (E/I, N/S, F/T, J/P)
+- The type may appear with a suffix like "-T" (Turbulent) or "-A" (Assertive), e.g., "ISFP-T" or "ENFJ-A"
+- Common formats: "ISFP-T", "Adventurer (ISFP-T)", "ISFP (Adventurer)", "Your type is ENFJ"
 
-The MBTI type will be one of these 16 types:
+The MBTI type will be one of these 16 types (ignore the -T/-A suffix):
 ENFJ, ENFP, ENTJ, ENTP, ESFJ, ESFP, ESTJ, ESTP, INFJ, INFP, INTJ, INTP, ISFJ, ISFP, ISTJ, ISTP
 
-Return ONLY the 4-letter code in uppercase. If you cannot find it, return "NOT_FOUND".`,
+IMPORTANT: Return ONLY the 4-letter code in uppercase (e.g., "ISFP" not "ISFP-T"). Ignore any suffix like -T or -A.
+If you cannot find a valid MBTI type, return "NOT_FOUND".`,
             attachments: [
               {
                 file_id: file.id,
