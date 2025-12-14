@@ -500,7 +500,7 @@ Look for:
 - Results sections, summary sections, or conclusion sections
 
 IMPORTANT: Return ONLY the 4-letter MBTI type code in uppercase (e.g., "ENFJ" or "INFP"). Do not include any explanation, punctuation, or additional text. If you cannot find a valid MBTI type after thoroughly searching the document, return exactly "NOT_FOUND".`,
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o', // Use gpt-4o for better PDF handling
         tools: [{ type: 'file_search' }],
         tool_resources: {
           file_search: {
@@ -518,10 +518,10 @@ IMPORTANT: Return ONLY the 4-letter MBTI type code in uppercase (e.g., "ENFJ" or
 
 Please search through the entire document carefully. Look for:
 - Results sections or summary sections
-- Any mention of "MBTI", "personality type", "your type", "Adventurer", or similar phrases
+- Any mention of "MBTI", "personality type", "your type", "Adventurer", "Architect", "Advocate", "Commander", "Debater", "Entertainer", "Entrepreneur", "Executive", "Logician", "Mediator", "Protagonist", "Virtuoso", "Campaigner", "Consul", "Defender", "Logistician", or similar phrases
 - Any 4-letter code that matches the MBTI pattern (E/I, N/S, F/T, J/P)
 - The type may appear with a suffix like "-T" (Turbulent) or "-A" (Assertive), e.g., "ISFP-T" or "ENFJ-A"
-- Common formats: "ISFP-T", "Adventurer (ISFP-T)", "ISFP (Adventurer)", "Your type is ENFJ"
+- Common formats: "ISFP-T", "Adventurer (ISFP-T)", "ISFP (Adventurer)", "Your type is ENFJ", "Personality Type: ENFJ"
 
 The MBTI type will be one of these 16 types (ignore the -T/-A suffix):
 ENFJ, ENFP, ENTJ, ENTP, ESFJ, ESFP, ESTJ, ESTP, INFJ, INFP, INTJ, INTP, ISFJ, ISFP, ISTJ, ISTP
