@@ -244,10 +244,18 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       // Check file status - OpenAI Files API returns 'uploaded' or 'processed' or 'error'
       // For PDFs, files are usually immediately available, but we check anyway
       let fileStatus = await openai.files.retrieve(file.id);
-      console.log('File status:', fileStatus.status);
+      console.log('File status after upload:', fileStatus.status);
+      console.log('File details:', {
+        id: fileStatus.id,
+        bytes: fileStatus.bytes,
+        created_at: fileStatus.created_at,
+        filename: fileStatus.filename,
+        purpose: fileStatus.purpose
+      });
 
       // If file is not processed yet, wait a bit (though this is rare)
       if (fileStatus.status === 'uploaded') {
+        console.log('File is uploaded but not yet processed, waiting...');
         // Wait a moment for processing (usually instant for PDFs)
         await new Promise(resolve => setTimeout(resolve, 2000));
         fileStatus = await openai.files.retrieve(file.id);
@@ -255,9 +263,18 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       }
 
       if (fileStatus.status === 'error') {
-        console.log('File upload failed');
-        await openai.files.del(file.id);
+        console.error('File upload failed with error status');
+        try {
+          await openai.files.del(file.id);
+        } catch (e) {
+          console.log('Error deleting failed file:', e);
+        }
         return null;
+      }
+      
+      if (fileStatus.status !== 'processed') {
+        console.warn('File status is not "processed":', fileStatus.status);
+        // Continue anyway, might still work
       }
 
       // Use Assistants API with file_search to extract MBTI type
