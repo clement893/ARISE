@@ -416,10 +416,10 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       return textResult;
     }
     
-    console.log('Text-based AI extraction failed, trying Files API with Chat Completions...');
+    console.log('Text-based AI extraction failed, trying Chat Completions API with file directly...');
 
-    // If text extraction fails, try using OpenAI Files API with Chat Completions
-    // Upload PDF file and use file_id in Chat Completions
+    // Try using Chat Completions API directly with the PDF file
+    // This is more reliable for PDFs that might have complex formatting
     const openai = new OpenAI({
       apiKey: openaiApiKey,
     });
@@ -428,12 +428,12 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
 
     try {
       // Upload the PDF file to OpenAI Files API
-      console.log('Uploading PDF to OpenAI Files API...');
+      console.log('Uploading PDF to OpenAI Files API for Chat Completions...');
       const uint8Array = new Uint8Array(buffer);
       const blob = new Blob([uint8Array], { type: 'application/pdf' });
       file = await openai.files.create({
         file: new File([blob], 'mbti-result.pdf', { type: 'application/pdf' }),
-        purpose: 'assistants',
+        purpose: 'assistants', // Can be used with Chat Completions too
       });
 
       console.log('File uploaded, ID:', file.id);
