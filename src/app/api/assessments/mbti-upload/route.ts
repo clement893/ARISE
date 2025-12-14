@@ -213,6 +213,7 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       console.log('File status:', fileStatus.status);
 
       // Use Chat Completions API with the file
+      // For PDFs, we can use the file_id in the message content
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -222,13 +223,16 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
           },
           {
             role: 'user',
-            content: 'Please extract the MBTI personality type from this PDF document. Look for phrases like "Your type is", "Personality type", "MBTI type", or any mention of a 4-letter code like ENFJ, INFP, etc. Return ONLY the 4-letter code in uppercase.',
-          }
-        ],
-        attachments: [
-          {
-            file_id: file.id,
-            tools: [{ type: 'file_search' }],
+            content: [
+              {
+                type: 'text',
+                text: 'Please extract the MBTI personality type from this PDF document. Look for phrases like "Your type is", "Personality type", "MBTI type", or any mention of a 4-letter code like ENFJ, INFP, etc. Return ONLY the 4-letter code in uppercase.',
+              },
+              {
+                type: 'file',
+                file_id: file.id,
+              }
+            ],
           }
         ],
         max_tokens: 10,
