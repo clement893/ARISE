@@ -96,13 +96,17 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     }
 
     // Method 2: Try to use pdf-parse if available (dynamic import)
+    // Note: pdf-parse is optional and may not be installed
     try {
-      const pdfParse = await import('pdf-parse');
-      const data = await pdfParse.default(buffer);
-      text = data.text;
+      // Use dynamic import with error handling
+      const pdfParseModule = await import('pdf-parse').catch(() => null);
+      if (pdfParseModule) {
+        const data = await pdfParseModule.default(buffer);
+        text = data.text;
+      }
     } catch (e) {
       // pdf-parse not available or failed, continue with text extraction
-      console.log('pdf-parse not available, using basic extraction');
+      // This is expected if pdf-parse is not installed
     }
 
     // Valid MBTI types

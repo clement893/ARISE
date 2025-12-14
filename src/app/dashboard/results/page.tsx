@@ -1,12 +1,11 @@
 'use client';
 
-import { Button, Card, CardContent, Badge, Spinner, LoadingPage } from '@/components/ui';
+import { Card, CardContent, Badge, Spinner, LoadingPage } from '@/components/ui';
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Share2, MessageCircle, ChevronRight, Download, FileText, AlertCircle, Upload } from 'lucide-react';
 import { generateLeadershipReport } from '@/lib/generateReport';
-import { Button } from '@/components/ui';
 
 interface User {
   id: number;
