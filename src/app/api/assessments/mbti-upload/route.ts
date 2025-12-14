@@ -114,9 +114,120 @@ export async function POST(request: NextRequest) {
 
 async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
   try {
-    // Extract text from PDF using direct UTF-8 conversion
-    // This works for some PDFs that contain text (not scanned images)
-    // Note: This is a basic approach. For complex PDFs, a proper PDF parser is needed.
+    let text = '';
+    
+    // Try using pdf-parse to properly parse the PDF
+    try {
+      console.log('Attempting to parse PDF with pdf-parse...');
+      
+      // Dynamic import to avoid build-time issues
+      const pdfParse = await import('pdf-parse');
+      const pdfData = await pdfParse.default(buffer);
+      
+      text = pdfData.text;
+      console.log('pdf-parse extraction: Total text length:', text.length);
+      console.log('pdf-parse extraction: Number of pages:', pdfData.numpages);
+      
+      if (text.length > 100) {
+        console.log('pdf-parse extraction: First 1000 characters:', text.substring(0, 1000));
+        console.log('pdf-parse extraction: Last 500 characters:', text.substring(Math.max(0, text.length - 500)));
+      } else {
+        console.log('pdf-parse extraction: Text too short, PDF might be scanned');
+        // Fall back to basic extraction
+        return await extractMBTITypeFromPDFBasic(buffer);
+      }
+    } catch (pdfParseError: any) {
+      console.log('pdf-parse extraction failed:', pdfParseError.message);
+      console.log('Falling back to basic extraction...');
+      // Fall back to basic extraction
+      return await extractMBTITypeFromPDFBasic(buffer);
+    }
+
+    // Now search for MBTI type in the extracted text
+    const validMBTITypes = [
+      'ENFJ', 'ENFP', 'ENTJ', 'ENTP',
+      'ESFJ', 'ESFP', 'ESTJ', 'ESTP',
+      'INFJ', 'INFP', 'INTJ', 'INTP',
+      'ISFJ', 'ISFP', 'ISTJ', 'ISTP'
+    ];
+
+    const mbtiPatterns = [
+      // Pattern for "Adventurer (ISFP-T)" - most common in 16personalities
+      /(?:Adventurer|Architect|Advocate|Commander|Debater|Entertainer|Entrepreneur|Executive|Logician|Mediator|Protagonist|Virtuoso|Campaigner|Consul|Defender|Logistician)\s*\(([EI][NS][FT][JP])[- ]?[TA]?\)/i,
+      // Pattern: "ISFP-T" or "ISFP-A" (with optional suffix, standalone)
+      /\b([EI][NS][FT][JP])[- ]?[TA]\b/i,
+      // Pattern: "ISFP (Adventurer)" - reversed format
+      /\b([EI][NS][FT][JP])[- ]?[TA]?\s*\([^)]+\)/i,
+      // Pattern with parentheses: "(ISFP-T)" or "(ISFP)"
+      /\(([EI][NS][FT][JP])[- ]?[TA]?\)/i,
+      // Pattern with type label: "Your type is ISFP-T" or "Personality type: ISFP"
+      /(?:type|personality|mbti|your\s+type|personality\s+type)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
+      // Pattern: "Your type is ENFJ" or "Personality type: ENFJ"
+      /(?:you\s+are|your\s+type\s+is|personality\s+type|your\s+personality)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
+      // Pattern: "result: ISFP" or "outcome: ENFJ"
+      /(?:result|outcome)[\s:]*([EI][NS][FT][JP])[- ]?[TA]?/i,
+      // Pattern: "ISFP-T - Adventurer" format
+      /\b([EI][NS][FT][JP])[- ]?[TA]?\s*[-–]\s*[A-Za-z]+/i,
+    ];
+
+    // Debug: Show sample of extracted text
+    console.log('pdf-parse extraction: Sample of extracted text (first 2000 chars):', text.substring(0, 2000));
+    console.log('pdf-parse extraction: Sample of extracted text (last 1000 chars):', text.substring(Math.max(0, text.length - 1000)));
+    
+    // Check if text contains key words that suggest MBTI content
+    const hasMBTIKeywords = /(?:mbti|personality|adventurer|architect|advocate|commander|debater|entertainer|entrepreneur|executive|logician|mediator|protagonist|virtuoso|campaigner|consul|defender|logistician)/i.test(text);
+    console.log('pdf-parse extraction: Contains MBTI keywords:', hasMBTIKeywords);
+    
+    // Check if text contains any MBTI-like patterns
+    const hasMBTIPattern = /[EI][NS][FT][JP][- ]?[TA]?/i.test(text);
+    console.log('pdf-parse extraction: Contains MBTI pattern:', hasMBTIPattern);
+    
+    if (hasMBTIPattern) {
+      console.log('pdf-parse extraction: Found MBTI-like pattern, searching...');
+      const patternMatch = text.match(/[EI][NS][FT][JP][- ]?[TA]?/i);
+      if (patternMatch) {
+        console.log('pdf-parse extraction: Pattern match found:', patternMatch[0]);
+      }
+    }
+
+    // First, try to find exact matches with context (more reliable)
+    for (let i = 0; i < mbtiPatterns.length; i++) {
+      const pattern = mbtiPatterns[i];
+      const matches = text.match(pattern);
+      if (matches && matches[1]) {
+        const foundType = matches[1].toUpperCase();
+        console.log(`pdf-parse extraction: Pattern ${i} matched:`, matches[0], '-> extracted type:', foundType);
+        if (validMBTITypes.includes(foundType)) {
+          console.log('pdf-parse extraction: found MBTI type with pattern:', foundType);
+          return foundType;
+        }
+      }
+    }
+
+    // If no contextual match, search for any valid MBTI type in the text
+    for (const type of validMBTITypes) {
+      const regex = new RegExp(`\\b${type}[- ]?[TA]?\\b`, 'i');
+      const match = text.match(regex);
+      if (match) {
+        console.log('pdf-parse extraction: found MBTI type without context:', type, 'matched:', match[0]);
+        return type;
+      }
+    }
+
+    console.log('pdf-parse extraction: no MBTI type found in PDF text');
+    console.log('pdf-parse extraction: Text length:', text.length);
+    console.log('pdf-parse extraction: Text contains "ISFP":', text.includes('ISFP') || text.includes('isfp'));
+    console.log('pdf-parse extraction: Text contains "Adventurer":', text.includes('Adventurer') || text.includes('adventurer'));
+    return null;
+  } catch (error) {
+    console.error('Error extracting MBTI type from PDF:', error);
+    return null;
+  }
+}
+
+async function extractMBTITypeFromPDFBasic(buffer: Buffer): Promise<string | null> {
+  try {
+    // Fallback basic extraction method (original implementation)
     let text = '';
     
     try {
@@ -166,7 +277,6 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
         }
         
         // Method 3: Look for readable text sequences (consecutive letters/numbers)
-        // This catches text that might be encoded differently
         const readableSequences = text.match(/[A-Za-z]{3,}/g) || [];
         const textFromSequences = readableSequences
           .filter(seq => seq.length >= 3)
@@ -179,14 +289,11 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
         
         // Combine all extracted texts
         if (extractedTexts.length > 0) {
-          // Combine and deduplicate
           const combinedText = extractedTexts.join(' ');
-          // Remove excessive whitespace
           text = combinedText.replace(/\s+/g, ' ').trim();
           
           if (text.length > 50) {
             console.log('Basic extraction: Combined extracted text length:', text.length);
-            console.log('First 500 characters:', text.substring(0, 500));
           } else {
             console.log('Basic extraction: PDF appears to be binary or scanned, readable text too short');
             return null;
@@ -215,13 +322,6 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     ];
 
     // Look for MBTI type patterns in the PDF text
-    // Common patterns from 16personalities.com and other sources:
-    // - "ISFP-T", "ISFP-A" (with suffix)
-    // - "Adventurer (ISFP-T)"
-    // - "ISFP (Adventurer)"
-    // - "Your type is ENFJ"
-    // - "Personality type: ENFJ"
-    // - "ISFP-T - Adventurer"
     const mbtiPatterns = [
       // Pattern for "Adventurer (ISFP-T)" - most common in 16personalities
       /(?:Adventurer|Architect|Advocate|Commander|Debater|Entertainer|Entrepreneur|Executive|Logician|Mediator|Protagonist|Virtuoso|Campaigner|Consul|Defender|Logistician)\s*\(([EI][NS][FT][JP])[- ]?[TA]?\)/i,
@@ -255,7 +355,6 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     
     if (hasMBTIPattern) {
       console.log('Basic extraction: Found MBTI-like pattern, searching...');
-      // Try to find the actual pattern
       const patternMatch = text.match(/[EI][NS][FT][JP][- ]?[TA]?/i);
       if (patternMatch) {
         console.log('Basic extraction: Pattern match found:', patternMatch[0]);
@@ -277,9 +376,7 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     }
 
     // If no contextual match, search for any valid MBTI type in the text
-    // This will match "ISFP-T" as "ISFP" due to word boundary
     for (const type of validMBTITypes) {
-      // Match type with optional -T or -A suffix
       const regex = new RegExp(`\\b${type}[- ]?[TA]?\\b`, 'i');
       const match = text.match(regex);
       if (match) {
@@ -294,7 +391,7 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
     console.log('Basic extraction: Text contains "Adventurer":', text.includes('Adventurer') || text.includes('adventurer'));
     return null;
   } catch (error) {
-    console.error('Error extracting MBTI type from PDF:', error);
+    console.error('Error in basic PDF extraction:', error);
     return null;
   }
 }
