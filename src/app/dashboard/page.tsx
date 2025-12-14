@@ -114,11 +114,13 @@ export default function DashboardPage() {
           await fetchAssessments(user.id);
         }
       } else {
-        alert(data.error || 'Failed to upload MBTI PDF');
+        const errorMsg = data.error || 'Failed to upload MBTI PDF';
+        const detailsMsg = data.details ? `\n\n${data.details}` : '';
+        alert(`${errorMsg}${detailsMsg}`);
       }
     } catch (error) {
       console.error('Error uploading MBTI PDF:', error);
-      alert('Failed to upload MBTI PDF. Please try again.');
+      alert('Failed to upload MBTI PDF. Please check your connection and try again.');
     } finally {
       setUploadingMBTI(false);
       if (fileInputRef.current) {
