@@ -135,13 +135,23 @@ async function extractMBTITypeFromPDF(buffer: Buffer): Promise<string | null> {
         console.log('pdf-parse extraction: Last 500 characters:', text.substring(Math.max(0, text.length - 500)));
       } else {
         console.log('pdf-parse extraction: Text too short, PDF might be scanned');
-        // Fall back to basic extraction
+        // Fall back to OCR extraction for scanned PDFs
+        const ocrResult = await extractMBTITypeWithOCR(buffer);
+        if (ocrResult) {
+          return ocrResult;
+        }
+        // Final fallback to basic extraction
         return await extractMBTITypeFromPDFBasic(buffer);
       }
     } catch (pdfParseError: any) {
       console.log('pdf-parse extraction failed:', pdfParseError.message);
-      console.log('Falling back to basic extraction...');
-      // Fall back to basic extraction
+      console.log('Falling back to OCR extraction...');
+      // Fall back to OCR extraction for scanned PDFs
+      const ocrResult = await extractMBTITypeWithOCR(buffer);
+      if (ocrResult) {
+        return ocrResult;
+      }
+      // Final fallback to basic extraction
       return await extractMBTITypeFromPDFBasic(buffer);
     }
 
