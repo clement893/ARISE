@@ -178,7 +178,7 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
       return textResult;
     }
     
-    console.log('Text-based AI extraction failed, trying Vision API...');
+    console.log('Text-based AI extraction failed, trying Files/Assistants API...');
 
     // If text extraction fails, try using OpenAI Files API or improved text extraction
     // Note: OpenAI Vision API doesn't support PDFs directly, so we'll use Files API
@@ -242,18 +242,23 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
     // Get the response
     const messages = await openai.beta.threads.messages.list(thread.id);
     const lastMessage = messages.data[0];
-    const extractedType = lastMessage.content[0]?.type === 'text' 
-      ? lastMessage.content[0].text.value.trim().toUpperCase()
-      : null;
+    let extractedType = null;
+    
+    if (lastMessage.content && lastMessage.content.length > 0) {
+      const content = lastMessage.content[0];
+      if (content.type === 'text') {
+        extractedType = content.text.value.trim().toUpperCase();
+      }
+    }
 
-    // Clean up
+    // Clean up files and assistant
     await openai.files.del(file.id);
+    await openai.beta.assistants.del(assistant.id);
 
     console.log('OpenAI Assistants API response:', extractedType);
 
-    const extractedType = response.choices[0]?.message?.content?.trim().toUpperCase();
-
     if (!extractedType || extractedType === 'NOT_FOUND') {
+      console.log('OpenAI Assistants API did not find MBTI type');
       return null;
     }
 
@@ -266,7 +271,7 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
     ];
 
     if (validMBTITypes.includes(extractedType)) {
-      console.log(`AI Vision API successfully extracted MBTI type: ${extractedType}`);
+      console.log(`AI Assistants API successfully extracted MBTI type: ${extractedType}`);
       return extractedType;
     }
 
