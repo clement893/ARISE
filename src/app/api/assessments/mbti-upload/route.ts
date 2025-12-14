@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Parse PDF to extract MBTI type
     // First try basic extraction, then fallback to AI if needed
+    console.log('Starting MBTI extraction from PDF, file size:', buffer.length, 'bytes');
     let mbtiType = await extractMBTITypeFromPDF(buffer);
 
     // If basic extraction fails, try AI extraction
@@ -37,7 +38,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!mbtiType) {
-      return NextResponse.json({ error: 'Could not extract MBTI type from PDF. Please ensure the PDF contains your MBTI personality type (e.g., ENFJ, INFP, etc.)' }, { status: 400 });
+      const openaiKey = process.env.OPENAI_API_KEY ? 'configured' : 'not configured';
+      console.error('Failed to extract MBTI type. OpenAI API key:', openaiKey);
+      return NextResponse.json({ 
+        error: 'Could not extract MBTI type from PDF. Please ensure the PDF contains your MBTI personality type (e.g., ENFJ, INFP, etc.). If your PDF is a scanned image or has complex formatting, AI extraction may be required (OpenAI API key: ' + openaiKey + ').' 
+      }, { status: 400 });
     }
 
     // Validate MBTI type format (4 letters: E/I, N/S, F/T, J/P)
@@ -151,14 +156,21 @@ async function extractMBTITypeWithAI(buffer: Buffer, fileName: string): Promise<
     
     if (!openaiApiKey) {
       console.log('OpenAI API key not configured, skipping AI extraction');
+      console.log('To enable AI extraction, set OPENAI_API_KEY environment variable');
       return null;
     }
 
+    console.log('OpenAI API key found, attempting AI extraction...');
+    
     // Try text-based extraction first (cheaper and faster)
+    console.log('Trying text-based AI extraction...');
     const textResult = await extractMBTITypeWithAIText(buffer);
     if (textResult) {
+      console.log('Text-based AI extraction succeeded:', textResult);
       return textResult;
     }
+    
+    console.log('Text-based AI extraction failed, trying Vision API...');
 
     // If text extraction fails, try Vision API
     const openai = new OpenAI({
@@ -244,10 +256,13 @@ async function extractMBTITypeWithAIText(buffer: Buffer): Promise<string | null>
 
     // Convert PDF buffer to text (basic UTF-8 conversion)
     const text = buffer.toString('utf-8');
+    console.log('Extracted text length:', text.length, 'characters');
+    console.log('First 500 characters of text:', text.substring(0, 500));
     
     // Limit text length to avoid token limits (first 8000 characters should be enough)
     const limitedText = text.substring(0, 8000);
 
+    console.log('Calling OpenAI API for text extraction...');
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini', // Use cheaper model for text extraction
       messages: [
@@ -264,8 +279,10 @@ async function extractMBTITypeWithAIText(buffer: Buffer): Promise<string | null>
     });
 
     const extractedType = response.choices[0]?.message?.content?.trim().toUpperCase();
+    console.log('OpenAI response:', extractedType);
 
     if (!extractedType || extractedType === 'NOT_FOUND') {
+      console.log('OpenAI did not find MBTI type in text');
       return null;
     }
 
@@ -282,9 +299,11 @@ async function extractMBTITypeWithAIText(buffer: Buffer): Promise<string | null>
       return extractedType;
     }
 
+    console.log('OpenAI returned invalid MBTI type:', extractedType);
     return null;
   } catch (error: any) {
     console.error('Error extracting MBTI type with AI text:', error.message);
+    console.error('Error details:', error);
     return null;
   }
 }
