@@ -217,8 +217,8 @@ export default function ResetPasswordPage() {
               variant="secondary"
               fullWidth
               isLoading={isLoading || tokenValid === null}
-              disabled={tokenValid === false}
-              rightIcon={!isLoading && tokenValid !== null ? <ArrowRight className="w-4 h-4" /> : undefined}
+              disabled={tokenValid === false || tokenValid === null}
+              rightIcon={!isLoading && tokenValid === true ? <ArrowRight className="w-4 h-4" /> : undefined}
             >
               {isLoading ? 'Resetting...' : 'Reset password'}
             </Button>
