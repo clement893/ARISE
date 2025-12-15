@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
         if (user.stripeSubscriptionId) {
           try {
             // Use subscription to get next billing info
-            const sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+            const sub: Stripe.Subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
             if (sub && sub.current_period_end) {
               upcomingInvoice = {
                 amount_due: sub.items?.data?.[0]?.price?.unit_amount || 0,
